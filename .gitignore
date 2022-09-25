@@ -1,0 +1,16 @@
+# Emacs
+*~
+\#*\#
+
+# IntelliJ
+.idea/
+out/
+*.iml
+
+# Java
+*.class
+*.jar
+
+# Scripts
+*.log
+.jattack
