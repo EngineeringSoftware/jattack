@@ -47,6 +47,23 @@ Executing TGen3...
 TGen1 failed! Potential JIT bugs!
 ```
 
+## Docs
+
+### Requirements
+
+- JDK >=11
+
+### Steps
+
+1. Build javadoc from source code.
+```bash
+cd tool/api
+./gradlew javadoc
+```
+
+2. Open `tool/api/build/docs/javadoc/index.html` in your favorite
+   browser.
+
 ## Bugs
 
 Directory `bugs` contains all six JIT bugs found by JAttack, each of
