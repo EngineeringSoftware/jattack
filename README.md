@@ -21,7 +21,10 @@ testing of Java JIT compilers.
 
 - Linux with GNU Bash (tested on Ubuntu 20.04)
 
-Run `./demo.sh`.
+Usage: `./demo.sh <class name> <number of generated programs>`
+
+For example: `./demo.sh T 3`, which is also the default setting when
+no argument is specified.
 
 ```bash
 $ ./demo.sh
