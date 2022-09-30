@@ -94,7 +94,8 @@ list. Please open a PR with a link to your bug.
 ## Citation
 
 If you use JAttack in your research, we request you to cite our
-[ASE'22 paper](XXX). Thank you!
+[ASE'22 paper](https://cptgit.github.io/dl/papers/zang22jattack.pdf).
+Thank you!
 
 ```bibtex
 @inproceedings{zang22jattack,
