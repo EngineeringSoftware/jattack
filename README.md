@@ -109,5 +109,6 @@ Thank you!
 ```
 
 ## Contact
-Let me ([Zhiqiang Zang](https://github.com/CptGit) know if you have
+
+Let me ([Zhiqiang Zang](https://github.com/CptGit)) know if you have
 any questions.
