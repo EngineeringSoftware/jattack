@@ -57,7 +57,7 @@ public class HoleExtractorTest {
         InMemoryCompiler compiler = new InMemoryCompiler();
         try {
             System.err.println(he.getSrcCode());
-            ClassLoader cl = compiler.compileAndGetLoader(
+            ClassLoader cl = compiler.compileAndRedefine(
                     HoleExtractor.CLASS_NAME, he.getSrcCode());
             Class<?> clz = TypeUtil.loadClz(HoleExtractor.CLASS_NAME, true, cl);
             clz.getDeclaredMethod(HoleExtractor.METHOD_NAME).invoke(null);

@@ -74,8 +74,7 @@ fi
 # Generate programs from the template using JAttack
 echo "Generate from ${class}..."
 rm -fr "${gen_dir}" && mkdir -p "${gen_dir}"
-java -cp "${JATTACK_JAR}:${build_dir}" sketchy.driver.Driver \
-     --ss=random \
+java -javaagent:"${JATTACK_JAR}" -cp "${build_dir}" sketchy.driver.Driver \
      --seed=${seed} \
      --nOutputs=${n_outputs} \
      --outputDir="${gen_dir}" \

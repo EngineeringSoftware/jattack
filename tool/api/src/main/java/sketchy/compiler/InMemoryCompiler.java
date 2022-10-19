@@ -15,8 +15,12 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
+import java.lang.instrument.ClassDefinition;
+import java.lang.instrument.UnmodifiableClassException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,12 +84,25 @@ public class InMemoryCompiler {
         return classBytes;
     }
 
-    public ClassLoader compileAndGetLoader(String className, String code)
+    /**
+     * Compile the given source code and redefine the given class
+     * using the obtained bytecode from compilation.
+     * <p>
+     * If the class is not in the classpath, for example, it is
+     * created on the fly, then we just define it using a new
+     * classloader and return the new classloader.
+     * @param className the given class to redefine
+     * @param code the source code to compile
+     * @return the classloader associated with the given class
+     * @throws CompilationException when the given source code could
+     * not compile
+     */
+    public ClassLoader compileAndRedefine(String className, String code)
             throws CompilationException {
-        return compileAndGetLoader(className, code, true);
+        return compileAndRedefine(className, code, true);
     }
 
-    public ClassLoader compileAndGetLoader(String className,
+    public ClassLoader compileAndRedefine(String className,
             String code, boolean transformBytecode)
             throws CompilationException {
         if (Config.isProfiling) {
@@ -98,7 +115,7 @@ public class InMemoryCompiler {
         if (transformBytecode) {
             transformBytecode();
         }
-        return newClassLoader();
+        return redefine(classBytes);
     }
 
     private void transformBytecode() {
@@ -111,8 +128,33 @@ public class InMemoryCompiler {
         }
     }
 
-    private ClassLoader newClassLoader() {
-        return new InMemoryClassLoader(classBytes, parentCl);
+    public ClassLoader redefine(ClassBytes classBytes) {
+        List<ClassDefinition> classDefinitions = new LinkedList<>();
+        for (Map.Entry<String, byte[]> entry: classBytes.entrySet()) {
+            String name = entry.getKey();
+            byte[] bytes = entry.getValue();
+            try {
+                Class<?> clz = Class.forName(name, false, parentCl);
+                classDefinitions.add(new ClassDefinition(clz, bytes));
+            } catch (ClassNotFoundException e) {
+                // The class is not at classpath, produced in
+                // memory. We will load it using a
+                // new classloader.
+                // This should only happen while Config.staticGen is
+                // true, and we want to compile the class
+                // HoleExtractor created at runtime.
+                Log.debug("Defining class " + name + " from memory...");
+                return new InMemoryClassLoader(classBytes, parentCl);
+            }
+        }
+
+        try {
+            Log.debug("Redefining classes " + classBytes.getClassNames());
+            Agent.getInst().redefineClasses(classDefinitions.toArray(ClassDefinition[]::new));
+        } catch (ClassNotFoundException | UnmodifiableClassException e) {
+            throw new RuntimeException(e);
+        }
+        return parentCl;
     }
 
     public Set<String> getCompiledClassNames() {
@@ -145,6 +187,18 @@ public class InMemoryCompiler {
                     cp.append(File.pathSeparator).append(url.getPath());
                 }
             }
+        cp.append(":").append(getAgentJarFilePath());
         return cp.length() == 0 ? null : cp.substring(1);
+    }
+
+    /**
+     * Get the path as String of javaagent jar.
+     */
+    private static String getAgentJarFilePath() {
+        try {
+            return Paths.get(Agent.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

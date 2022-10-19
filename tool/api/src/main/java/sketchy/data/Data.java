@@ -32,10 +32,7 @@ public class Data {
      * Maps hole identifiers to strings.
      * Reset per run.
      */
-    // TODO: The reason why I initialize here is for testing, for
-    //  SkXXXWOTransformed to be able to be run. We should remove the
-    //  initialization when we use a new way of testing.
-    private static Map<Integer, String> strCache = new HashMap<>();
+    private static Map<Integer, String> strCache;
 
     public static void resetStrCache() {
         strCache = new HashMap<>();

@@ -19,6 +19,7 @@ import com.github.javaparser.ast.stmt.TryStmt;
 import sketchy.Config;
 import sketchy.Constants;
 import sketchy.data.Data;
+import sketchy.log.Log;
 import sketchy.transformer.visitor.HoleFiller;
 import sketchy.transformer.visitor.RemoveVisitor;
 import sketchy.transformer.visitor.RenameVisitor;
@@ -317,6 +318,9 @@ public class OutputTransformer extends Transformer {
         sb.append("}")
                 .append("catch (Throwable e) {");
         // Catch block
+        if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
+            sb.append("e.printStackTrace();");
+        }
         sb.append(String.format("if (e instanceof %s) {throw e;}", Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ));
         sb.append("cs.update(e.getClass().getName());");
         sb.append("}")

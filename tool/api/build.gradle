@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'sketchy'
-version '0.78'
+version '0.80.5'
 
 repositories {
     mavenCentral()
@@ -40,7 +40,12 @@ jar {
     manifest {
         attributes('Manifest-Version': '1.0',
                    'Main-Class': 'sketchy.driver.Driver',
-                   'Implementation-Version': project.version)
+                   'Implementation-Version': project.version,
+                   'Premain-Class': 'sketchy.compiler.Agent',
+                   'Can-Redefine-Classes': 'true',
+                   'Can-Retransform-Classes': 'true',
+                   'Agent-Class': 'sketchy.compiler.Agent'
+        )
     }
 }
 

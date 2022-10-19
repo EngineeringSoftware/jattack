@@ -70,7 +70,7 @@ public class Config {
 
     /* The info of the test sketch program as input. */
     public static String sketchClzFullName;
-    public static String sketchSrc; // the path of source code.
+    public static String sketchSrcPath; // the path of source code.
 
     /**
      * Determine if we keep package declarations in generated

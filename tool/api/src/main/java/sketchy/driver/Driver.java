@@ -8,6 +8,7 @@ import sketchy.annotation.Entry;
 import sketchy.ast.Node;
 import sketchy.bytecode.StaticFieldAnalyzer;
 import sketchy.bytecode.VariableAnalyzer;
+import sketchy.compiler.ClassBytes;
 import sketchy.compiler.CompilationException;
 import sketchy.compiler.InMemoryCompiler;
 import sketchy.data.Data;
@@ -55,18 +56,17 @@ public class Driver {
     /*---------------------- Internal variables. -------------------*/
 
     // cannot change after init
+    private static Class<?> sketchClz;
+    private static Method entryMethod;
+    private static String initialSketchSourceCode;
+    private static ClassBytes initialSketchClassBytes;
     private static Map<String, Object> initialFieldValues;
     private static Set<String> allClassNamesInSketch; // including all nested classes
     private static String sketchClzSimpleName;
     private static OutputTransformer outputTransformer;
     private static OnDemandTransformer onDemandTransformer;
-    private static ClassLoader initialClassLoader;
     private static String[] argumentMethodNames;
     private static WrappedChecksum checksum; // for testing, only used when Config.mimicExecution is on
-
-    // can change after init
-    private static Class<?> sketchClz;
-    private static Method entryMethod;
 
     // flags per gen
     private static boolean hasCompilingIssueInHotFilling;
@@ -133,15 +133,15 @@ public class Driver {
 
         // Init argumentMethodNames
         try {
-            Class<?> fakeClz = Class.forName(Config.sketchClzFullName);
-            setArgumentMethodNames(fakeClz);
+            Class<?> clz = Class.forName(Config.sketchClzFullName);
+            setArgumentMethodNames(clz);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
         // Assign identifiers for holes
         HoleIdAssigner assigner = new HoleIdAssigner(
-                Config.sketchSrc,
+                Config.sketchSrcPath,
                 sketchClzSimpleName,
                 Config.optSolverAid);
         if (Config.isProfiling) {
@@ -167,6 +167,7 @@ public class Driver {
         outputTransformer = new OutputTransformer(
                 cu, sketchClzSimpleName, entryMethodName,
                 entryMethodReturnsVoid, Arrays.asList(argumentMethodNames));
+        initialSketchSourceCode = outputTransformer.getOrigCu().toString();
 
         // Write files
         if (Config.saveHoleValues) {
@@ -183,7 +184,7 @@ public class Driver {
                 genFromSketch();
             }
         } else {
-            // No hole exercised
+            // No hole in this sketch
             outputWhenNoHoleExercised();
         }
     }
@@ -210,9 +211,9 @@ public class Driver {
     private static void staticLoadSketch() {
         try {
             // Compile and load sketch classes
-            ClassLoader cl = compiler.compileAndGetLoader(
+            ClassLoader cl = compiler.compileAndRedefine(
                     Config.sketchClzFullName,
-                    outputTransformer.getOrigCu().toString(),
+                    initialSketchSourceCode,
                     false);
             // Get local variables available for every hole populating
             // {@code Data.varsByHole}.
@@ -235,7 +236,7 @@ public class Driver {
         String code = new HoleExtractor(outputTransformer.getOrigCu())
                 .transformAndGetSrcCode();
         try {
-            ClassLoader cl = compiler.compileAndGetLoader(
+            ClassLoader cl = compiler.compileAndRedefine(
                     HoleExtractor.CLASS_NAME, code, false);
             Class<?> clz = TypeUtil.loadClz(HoleExtractor.CLASS_NAME, false, cl);
             Method m = clz.getDeclaredMethod(HoleExtractor.METHOD_NAME);
@@ -269,17 +270,6 @@ public class Driver {
     }
 
     /**
-     * Output a special generated program without transforming hole
-     * apis.
-     */
-    private static void outputNoTransformApi() {
-        String outputClzName = Config.outputWOTransformedClzName;
-        String code = outputTransformer.setOutClzName(outputClzName)
-                .transformAndGetSrcCode();
-        outputJavaFile(outputClzName, code);
-    }
-
-    /**
      * Output a special generated program with suffix 0, including two
      * cases: 1) there is no hole in the sketch; 2) there is some hole
      * in the sketch but no hole will be reached when the entry method
@@ -294,7 +284,7 @@ public class Driver {
 
     private static void genFromSketch() {
         try {
-            loadSketch();
+            prepareForRunningSketch();
             do {
                 setUp();
                 runSketch();
@@ -308,19 +298,22 @@ public class Driver {
         }
     }
 
-    private static void loadSketch()
+    private static void prepareForRunningSketch()
             throws ClassNotFoundException, IllegalAccessException {
         try {
-            initialClassLoader = compiler.compileAndGetLoader(
-                    Config.sketchClzFullName,
-                    outputTransformer.getOrigCu().toString());
+            compiler.compileAndRedefine(Config.sketchClzFullName, initialSketchSourceCode);
         } catch (CompilationException e) {
-            // Compilation error in initial loading says the template
-            // has issues.
             throw new RuntimeException(e);
         }
+        initialSketchClassBytes = compiler.getClassBytes();
         allClassNamesInSketch = compiler.getCompiledClassNames();
-        saveInitialStatus();
+        sketchClz = Class.forName(Config.sketchClzFullName);
+        entryMethod = getEntryMethod(sketchClz);
+        saveInitialSketchStatus();
+    }
+
+    private static void recoverInitialSketchClass() {
+        compiler.redefine(initialSketchClassBytes);
     }
 
     private static void runSketch()
@@ -340,8 +333,8 @@ public class Driver {
 
     private static void runSketch0()
             throws IllegalAccessException, InvocationTargetException,
-            NoSuchFieldException, ClassNotFoundException,
-            CompilationException, NoSuchMethodException {
+            NoSuchFieldException, CompilationException,
+            NoSuchMethodException {
         if (Config.mimicExecution) {
             checksum = new WrappedChecksum();
         }
@@ -385,7 +378,7 @@ public class Driver {
                 }
                 // transform known holes and compile in memory in
                 // order to speed up the following iterations.
-                transformSketchAndCompileInMemory(currFieldValues);
+                transformSketchAndCompileInMemoryAndRedefineClass();
                 if (Config.isProfiling) {
                     numHotFillingPerGen +=1;
                 }
@@ -460,6 +453,14 @@ public class Driver {
                 // ignored it otherwise the program would have stopped.
                 return;
             }
+
+            // Classloader issue should be gone now; tested it was
+            // gone. this is not supposed to be triggered any more but
+            // keep it for safe.
+            if (cause instanceof IllegalAccessError) {
+                throw e;
+            }
+
             StackTraceElement frame = getFirstNonJavaOwnStack(frames);
             if (frame == null) {
                 // exception is from inside Java
@@ -476,7 +477,9 @@ public class Driver {
                 // TODO: perform the same checksum as we do in main
                 //   generated by output transformer for testing
                 //   purpose
-                // e.printStackTrace();
+                if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
+                    e.printStackTrace();
+                }
                 if (Config.mimicExecution) {
                     checksum.update(cause.getClass().getName());
                 }
@@ -490,14 +493,19 @@ public class Driver {
     private static void setUp()
             throws IllegalAccessException, ClassNotFoundException,
             NoSuchFieldException {
+        // TODO: Suggests GC recycle some memory otherwise we will
+        //   have OutOfMemoryError some times, but this is not the
+        //   best way.
+        System.gc();
+
         Data.runCount += 1;
         Data.resetStrCache();
         Data.holeVector = new UniqueList<>();
         Data.resetNeverReachableHoles();
 
-        // reload the original class
-        reloadSketch(initialClassLoader);
-        recoverInitialStatus();
+        // recover the original class, both definition and state
+        recoverInitialSketchClass();
+        recoverInitialSketchStatus();
 
         // reset inner state of onDemandTransformer
         if (Config.optHotFilling || Config.optSolverAid) {
@@ -514,13 +522,10 @@ public class Driver {
         resetRuntimeStatsCounters();
     }
 
-    private static void transformSketchAndCompileInMemory(Map<String, Object> fieldValues)
-            throws NoSuchFieldException, IllegalAccessException,
-            ClassNotFoundException, CompilationException {
+    private static void transformSketchAndCompileInMemoryAndRedefineClass()
+            throws CompilationException {
         String code = transformOnDemand();
-        ClassLoader cl = compiler.compileAndGetLoader(Config.sketchClzFullName, code);
-        reloadSketch(cl);
-        recoverStatus(fieldValues);
+        compiler.compileAndRedefine(Config.sketchClzFullName, code);
     }
 
     private static String transformOnDemand() {
@@ -551,38 +556,22 @@ public class Driver {
     }
 
     /**
-     * Recover the given status for the sketch class.
-     */
-    private static void recoverStatus(Map<String, Object> fieldValues)
-            throws NoSuchFieldException, IllegalAccessException {
-        if (Config.isProfiling) {
-            long beg = System.currentTimeMillis();
-            TypeUtil.recoverStatus(sketchClz, fieldValues);
-            totalTrackStatusTime += System.currentTimeMillis() - beg;
-        } else {
-            TypeUtil.recoverStatus(sketchClz, fieldValues);
-        }
-    }
-
-    /**
      * Capture the initial status of the sketch class.
      */
-    private static void saveInitialStatus()
-            throws IllegalAccessException, ClassNotFoundException {
-        Class<?> initialClz = TypeUtil.loadClz(Config.sketchClzFullName, true, initialClassLoader);
+    private static void saveInitialSketchStatus() throws IllegalAccessException {
         if (Config.isProfiling) {
             long beg = System.currentTimeMillis();
-            initialFieldValues = TypeUtil.captureStatus(initialClz);
+            initialFieldValues = TypeUtil.captureStatus(sketchClz);
             totalTrackStatusTime += System.currentTimeMillis() - beg;
         } else {
-            initialFieldValues = TypeUtil.captureStatus(initialClz);
+            initialFieldValues = TypeUtil.captureStatus(sketchClz);
         }
     }
 
     /**
      * Recover the initial status of the sketch class.
      */
-    private static void recoverInitialStatus()
+    private static void recoverInitialSketchStatus()
             throws IllegalAccessException, NoSuchFieldException {
         if (Config.isProfiling) {
             long beg = System.currentTimeMillis();
@@ -740,18 +729,6 @@ public class Driver {
                 || e instanceof ArithmeticException;
     }
 
-    private static void reloadSketch(ClassLoader cl)
-            throws ClassNotFoundException {
-        reloadSketch(cl, false);
-    }
-
-    private static void reloadSketch(ClassLoader cl, boolean initialize)
-            throws ClassNotFoundException {
-        TypeUtil.loadClzes(allClassNamesInSketch, initialize, cl);
-        sketchClz = TypeUtil.loadClz(Config.sketchClzFullName, initialize, cl);
-        entryMethod = getEntryMethod(sketchClz);
-    }
-
     private static Method getEntryMethod(Class<?> clz) {
         for (Method method : clz.getDeclaredMethods()) {
             if (method.isAnnotationPresent(Entry.class)) {
@@ -901,11 +878,10 @@ public class Driver {
      * exceptions.
      */
     private static void outputInvalidArrIdxExceptionFile() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("invalidArrayIndexException\n")
-                .append(numInvalidArrIdxException).append("\n");
+        String str = "invalidArrayIndexException\n" +
+                numInvalidArrIdxException + "\n";
         IOUtil.writeToFile(Config.outputDir,
                 Config.invalidArrIdxExceptionFile,
-                sb.toString());
+                str);
     }
 }

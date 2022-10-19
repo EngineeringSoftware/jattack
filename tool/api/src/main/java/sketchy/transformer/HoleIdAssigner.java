@@ -53,7 +53,7 @@ public class HoleIdAssigner extends Transformer {
      * Check the validity of sketch source code to make sure:
      *  1) the classname matches the given one;
      *  2) there exists one and only one @Entry method.
-     *  TODO: 
+     *  TODO: the following
      *  3) entry method cannot be overloading other existing methods
      *  3) @Argument methods are all static.
      *  4) @Argument methods have no parameters.

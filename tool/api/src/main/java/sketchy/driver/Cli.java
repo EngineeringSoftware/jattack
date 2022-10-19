@@ -6,7 +6,6 @@ import sketchy.util.IOUtil;
 import sketchy.util.Rand;
 
 import java.util.LinkedList;
-import java.util.Random;
 
 /**
  * Class to parse command-line arguments.
@@ -134,7 +133,7 @@ public class Cli {
             break;
         }
         case "srcPath": {
-            Config.sketchSrc = value;
+            Config.sketchSrcPath = value;
             break;
         }
         case "transformAPI": {
@@ -247,7 +246,7 @@ public class Cli {
         if (Config.sketchClzFullName == null) {
             throw new RuntimeException("--clzName is required!");
         }
-        if (Config.sketchSrc == null) {
+        if (Config.sketchSrcPath == null) {
             throw new RuntimeException("--srcPath is required!");
         }
         if (!Config.transformApi && Config.outputWOTransformedClzName == null) {

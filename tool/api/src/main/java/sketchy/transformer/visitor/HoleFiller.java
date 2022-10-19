@@ -66,6 +66,9 @@ public class HoleFiller extends ModifierVisitor<Void> {
         }
         String stmt = Data.getJavaStrOfHole(holeId);
         // TODO: I don't think the wrapping works for statements.
+        //  for now it is ok since we do not have any serious sketches
+        //  with statement holes. All statement holes are used in
+        //  the sketches for testing only.
         return StaticJavaParser.parseStatement(stmt);
     }
 

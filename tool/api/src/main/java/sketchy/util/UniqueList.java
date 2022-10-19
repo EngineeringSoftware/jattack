@@ -50,7 +50,7 @@ public class UniqueList<E> extends AbstractList<E> {
      * Removes an element at the given index from this list. Returns
      * the element removed.
      *
-     * TODO: updating indices is O(n)!
+     * TODO: updating indices is O(n)! We want O(1).
      */
     @Override
     public E remove(int index) throws IndexOutOfBoundsException {
@@ -67,7 +67,7 @@ public class UniqueList<E> extends AbstractList<E> {
      * Removes an element from this list. Returns false if the
      * specified element does not exists otherwise returns true.
      *
-     * TODO: remove(idx) is O(n)!
+     * TODO: remove(idx) is O(n)! We want O(1).
      */
     @Override
     public boolean remove(Object o) {

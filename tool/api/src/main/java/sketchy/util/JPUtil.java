@@ -62,7 +62,8 @@ public class JPUtil {
      * format {@code [some api].eval(...)}.
      */
     public static boolean isHole(MethodCallExpr expr) {
-        // TODO: this is still not 100% accurate but sufficient.
+        // TODO: this is still not 100% accurate but sufficient for
+        //  now. Revisit it if we come across any issues.
         // name is "eval"
         return expr.getNameAsString().equals(Constants.EVAL_METH_NAME)
                 // scope ends with one of our apis

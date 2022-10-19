@@ -6,15 +6,20 @@ package sketchy.log;
 public class Log {
 
     public enum Level {
-        INFO("INFO", 2),
-        DEBUG("DEBUG", 1),
+        DEBUG("DEBUG", 2),
+        INFO("INFO", 1),
         ERROR("ERROR", 0);
 
         private final String name;
         private final int order;
+
         Level(String name, int order) {
             this.name = name;
             this.order = order;
+        }
+
+        public int getOrder() {
+            return order;
         }
     }
 
@@ -24,11 +29,11 @@ public class Log {
 
     public static void setLevel(String newLevel) {
         switch (newLevel) {
-        case "info":
-            setLevel(Level.INFO);
-            break;
         case "debug":
             setLevel(Level.DEBUG);
+            break;
+        case "info":
+            setLevel(Level.INFO);
             break;
         case "error":
             setLevel(Level.ERROR);
@@ -42,28 +47,32 @@ public class Log {
         level = newLevel;
     }
 
-    public static void info(Object msg) {
-        if (level.order < Level.INFO.order) {
-            return;
-        }
-        log(msg, "INFO");
+    public static Level getLevel() {
+        return level;
     }
 
     public static void debug(Object msg) {
-        if (level.order < Level.DEBUG.order) {
-            return;
-        }
-        log(msg, "DEBUG");
+        log(msg, Level.DEBUG);
+    }
+
+    public static void info(Object msg) {
+        log(msg, Level.INFO);
     }
 
     public static void error(Object msg) {
-        if (level.order < Level.ERROR.order) {
-            return;
-        }
-        log(msg, "ERROR");
+        log(msg, Level.ERROR);
     }
 
-    private static void log(Object msg, String level) {
-        System.out.println(MSG_PREFIX + level + ": " + msg);
+    // We want to use this method in tests so I made it
+    // package-private.
+    static String getFullLogMessage(Object msg, Level logLevel) {
+        return MSG_PREFIX + logLevel.name + ": " + msg + System.lineSeparator();
+    }
+
+    private static void log(Object msg, Level logLevel) {
+        if (level.order < logLevel.order) {
+            return;
+        }
+        System.out.print(getFullLogMessage(msg, logLevel));
     }
 }

@@ -73,6 +73,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
         }
 
         // Save values of variables
+        invokeResetMemory();
         saveLocalVarValues(availableVars, offset);
         saveFieldValues();
 
@@ -82,6 +83,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
         // Update values of variables
         updateLocalVarValues(availableVars, offset);
         updateFieldValues();
+        invokeResetMemory(); // Release references to help GC
     }
 
     private void saveFieldValues() {
@@ -143,7 +145,6 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      * <code>Data.memory</code>.
      */
     private void saveLocalVarValues(Set<Var> availableVars, int offset) {
-        invokeResetMemory();
         for (Var var : availableVars) {
             String desc = var.getDesc();
             if (!TypeUtil.isTypeDescSupported(desc)) {
