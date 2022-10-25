@@ -309,6 +309,8 @@ public class Driver {
         allClassNamesInSketch = compiler.getCompiledClassNames();
         sketchClz = Class.forName(Config.sketchClzFullName);
         entryMethod = getEntryMethod(sketchClz);
+        // TODO: save and recover not only status of sktech class but
+        //    also any nested classes of it.
         saveInitialSketchStatus();
     }
 
@@ -371,12 +373,7 @@ public class Driver {
 
             if ((Config.optHotFilling || Config.optSolverAid)
                     && Data.getNumFilledHoles() > prevNHolesFilled) {
-                // Need update currFieldValues if not updated because
-                // optStopEarly is off or mimicExecution is on
-                if (Config.mimicExecution || !Config.optStopEarly) {
-                    currFieldValues = getCurrentStatus();
-                }
-                // transform known holes and compile in memory in
+                // Transform known holes and compile in memory in
                 // order to speed up the following iterations.
                 transformSketchAndCompileInMemoryAndRedefineClass();
                 if (Config.isProfiling) {

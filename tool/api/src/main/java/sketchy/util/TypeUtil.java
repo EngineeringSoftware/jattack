@@ -39,17 +39,13 @@ public class TypeUtil {
         }
 
         int len = Array.getLength(arr);
-        Class<?> comClz = arrClz.getComponentType();
-        Object copy = Array.newInstance(comClz, len);
-        if (!comClz.isArray()) {
-            // base case
-            System.arraycopy(arr, 0, copy, 0, len);
-        } else {
-            for (int i = 0; i < len; i++) {
-                Array.set(copy, i, deepCopyArray(Array.get(arr, i)));
-            }
+        Class<?> compClz = arrClz.getComponentType();
+        Object arrCpy = Array.newInstance(compClz, len);
+        for (int i = 0; i < len; i++) {
+            Object elem = Array.get(arr, i);
+            Array.set(arrCpy, i, deepCopy(elem));
         }
-        return copy;
+        return arrCpy;
     }
 
     /**
@@ -60,11 +56,14 @@ public class TypeUtil {
             return null;
         }
         Class<?> clz = obj.getClass();
-        if (clz.isArray()) {
+        if (org.csutil.util.TypeUtil.isImmutable(clz)) {
+            return obj;
+        } else if (clz.isArray()) {
             return deepCopyArray(obj);
+        } else {
+            // TODO: reference types
+            return obj;
         }
-        // TODO: reference types
-        return obj;
     }
 
     // NOTE this method has side effect, which updates status passed in.
@@ -87,7 +86,7 @@ public class TypeUtil {
     }
 
     private static boolean objectEquals(Object v1, Object v2) {
-        // at least primitives and arrays are fine.
+        // at least primitives, strings and arrays are fine.
         // TODO: other types.
         return Objects.deepEquals(v1, v2);
     }
@@ -101,8 +100,7 @@ public class TypeUtil {
         Map<String, Object> fieldValues = new HashMap<>();
         for (Field field : clz.getDeclaredFields()) {
             int modifiers = field.getModifiers();
-            if (Modifier.isFinal(modifiers)
-                    || !Modifier.isStatic(modifiers)) {
+            if (!Modifier.isStatic(modifiers)) {
                 continue;
             }
             field.setAccessible(true);
@@ -127,6 +125,39 @@ public class TypeUtil {
         return fieldValues;
     }
 
+    private static void deepSet(Object obj, Object val) {
+        if (obj == null) {
+            if (val != null) {
+                throw new RuntimeException("Cannot set state for null!");
+            }
+            return;
+        }
+        Class<?> clz = obj.getClass();
+        if (org.csutil.util.TypeUtil.isImmutable(clz)) {
+            if (!Objects.equals(val, obj)) {
+                throw new RuntimeException("Cannot set state for primitives or strings!");
+            }
+        } else if (clz.isArray()) {
+            deepSetArray(obj, val);
+        } else {
+            // TODO: reference types
+        }
+    }
+
+    private static void deepSetArray(Object arr, Object val) {
+        Class<?> arrClz = arr.getClass();
+        if (!arrClz.isArray()) {
+            throw new IllegalArgumentException("Expect an array but got: " + arrClz);
+        }
+
+        int len = Array.getLength(arr);
+        for (int i = 0; i < len; i++) {
+            Object elem = Array.get(val, i);
+            // TODO: check Array.get(arr, i) has the same type of elem
+            Array.set(arr, i, deepCopy(elem));
+        }
+    }
+
     /**
      * Set static fields of the given class using the given values.
      */
@@ -137,7 +168,17 @@ public class TypeUtil {
         for (Map.Entry<String, Object> e : fieldValues.entrySet()) {
             Field field = clz.getDeclaredField(e.getKey());
             field.setAccessible(true);
-            field.set(null, deepCopy(e.getValue()));
+            Object val = e.getValue();
+            if (isFinal(field)) {
+                // For a final field, we cannot directly modify its
+                // value so we set its state.
+                Object obj = field.get(null);
+                deepSet(obj, val);
+            } else {
+                // For a non-final field, we directly change its
+                // value.
+                field.set(null, deepCopy(val));
+            }
         }
     }
 

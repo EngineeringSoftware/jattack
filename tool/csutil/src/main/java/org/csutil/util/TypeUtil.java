@@ -112,6 +112,16 @@ public class TypeUtil {
     }
 
     /**
+     * Returns whether the given {@code clz} is an immutable type,
+     * i.e., primtives, boxed primitives or strings.
+     * @param clz the class to query.
+     * @return true if the given {@code clz} is an immutable type
+     */
+    public static boolean isImmutable(final Class<?> clz) {
+        return clz.isPrimitive() || isBoxedPrimitive(clz) || isString(clz);
+    }
+
+    /**
      * Returns whether the given {@code clz} is of {@link String} type.
      * @param clz the class to query.
      * @return true if the given {@code clz} is of {@link String} type
