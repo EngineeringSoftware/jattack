@@ -10,8 +10,9 @@ public class T {
     public static int m() {
         int[] arr = { s1++, s2, 1, 2, intVal().eval() };
         for (int i = 0; i < arr.length; ++i) {
-            if (intIdOrIntArrAccessExp().eval() <= s2 || relation(intId("s2"), intIdOrIntArrAccessExp(), LE).eval()) {
-                arr[i] &= arithmetic(intIdOrIntArrAccessExp(), intIdOrIntArrAccessExp(), ADD, MUL).eval();
+            if (intIdOrIntArrAccessExp().eval() <= s2
+                    || relation(intId("s2"), intIdOrIntArrAccessExp(), LE).eval()) {
+                arr[i] &= arithmetic(intId(), intArrAccessExp(), ADD, MUL).eval();
             }
         }
         return s1 + s2;

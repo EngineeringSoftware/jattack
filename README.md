@@ -17,9 +17,110 @@ This demo shows how JAttack generates programs from a given template
 `T.java` and then executes the generated programs for differential
 testing of Java JIT compilers.
 
-### Requirements
+### Steps
 
-- Linux with GNU Bash (tested on Ubuntu 20.04)
+1. Write a template program using JAttack's DSL fully embedded in
+   Java, for example, `T.java`.
+
+```java
+import sketchy.annotation.Entry;
+import static sketchy.Sketchy.*;
+
+public class T {
+
+    static int s1;
+    static int s2;
+
+    @Entry
+    public static int m() {
+        int[] arr = { s1++, s2, 1, 2, intVal().eval() };
+        for (int i = 0; i < arr.length; ++i) {
+            if (intIdOrIntArrAccessExp().eval() <= s2
+                    || relation(intId("s2"), intIdOrIntArrAccessExp(), LE).eval()) {
+                arr[i] &= arithmetic(intId(), intArrAccessExp(), ADD, MUL).eval();
+            }
+        }
+        return s1 + s2;
+    }
+}
+```
+
+2. JAttack executes the given template to generate concrete Java
+   programs. For example, One of the generated programs from the
+   template `T.java` can be `TGen1.java`.
+
+```java
+import sketchy.annotation.Entry;
+import static sketchy.Sketchy.*;
+import org.csutil.checksum.WrappedChecksum;
+
+public class TGen1 {
+
+    static int s1;
+
+    static int s2;
+
+    public static int m() {
+        int[] arr = { s1++, s2, 1, 2, -1170105035 };
+        for (int i = 0; i < arr.length; ++i) {
+            if (i <= s2 || (s2 <= arr[2])) {
+                arr[i] &= (s2 + arr[0]);
+            }
+        }
+        return s1 + s2;
+    }
+
+    public static long main0(String[] args) {
+        int N = 100000;
+        if (args.length > 0) {
+            N = Math.min(Integer.parseInt(args[0]), N);
+        }
+        WrappedChecksum cs = new WrappedChecksum();
+        for (int i = 0; i < N; ++i) {
+            try {
+                cs.update(m());
+            } catch (Throwable e) {
+                if (e instanceof sketchy.exception.InvokedFromNotDriverException) {
+                    throw e;
+                }
+                cs.update(e.getClass().getName());
+            }
+        }
+        cs.updateStaticFieldsOfClass(TGen1.class);
+        return cs.getValue();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(main0(args));
+    }
+}
+```
+
+3. Run the generated program(s) across Java JIT compilers. For
+   example, running the generated program `TGen1.java` crashes HotSpot
+   JIT in openjdk-11.0.8.
+
+```
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f55deedd845, pid=432431, tid=432442
+#
+# JRE version: OpenJDK Runtime Environment AdoptOpenJDK (11.0.8+10) (build 11.0.8+10)
+# Java VM: OpenJDK 64-Bit Server VM AdoptOpenJDK (11.0.8+10, mixed mode, tiered, compressed oops, g1 gc, linux-amd64)
+# Problematic frame:
+# V  [libjvm.so+0xd60845]  ok_to_convert(Node*, Node*)+0x15
+#
+# Core dump will be written. Default location: Core dumps may be processed with "/usr/share/apport/apport -p%p -s%s -c%c -d%d -P%P -u%u -g%g -- %E" (or dumping to /home/zzq/projects/jattack/core.432431)
+#
+# If you would like to submit a bug report, please visit:
+#   https://github.com/AdoptOpenJDK/openjdk-support/issues
+#
+```
+
+### Demo
+
+Requirements: Linux with GNU Bash (tested on Ubuntu 20.04)
 
 Usage: `./demo.sh <class name> <number of generated programs>`
 
@@ -31,11 +132,11 @@ $ ./demo.sh
 Download JDK...
 Build JAttack...
 Generate from T...
-3 programs are generated in /home/zzq/jattack-master/.jattack/T/gen
+3 programs are generated in /home/zzq/projects/jattack/.jattack/T/gen
 Executing TGen1...
   At level4...
-./demo.sh: line 115:  9670 Aborted                 (core dumped) java -cp "${CP}" ${EXTRA_JAVA_FLAGS} ${STOP_AT_LEVEL}${level} ${gen_clz} ${n_exec_itrs} > "${output_file}" 2>&1
-ERROR: running TGen1 at level4. See /home/zzq/jattack-master/.jattack/T/output/TGen1/TGen1-level4.txt
+./demo.sh: line 114: 432431 Aborted                 (core dumped) java -cp "${CP}" ${EXTRA_JAVA_FLAGS} ${STOP_AT_LEVEL}${level} ${gen_clz} ${n_exec_itrs} > "${output_file}" 2>&1
+ERROR: running TGen1 at level4. See /home/zzq/projects/jattack/.jattack/T/output/TGen1/TGen1-level4.txt
   At level1...
 TGen1: level4 differs with level1!
 Executing TGen2...
