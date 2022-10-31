@@ -3,6 +3,7 @@ package sketchy.driver;
 import com.github.javaparser.ast.CompilationUnit;
 import org.csutil.checksum.WrappedChecksum;
 import sketchy.Config;
+import sketchy.Constants;
 import sketchy.annotation.Argument;
 import sketchy.annotation.Entry;
 import sketchy.ast.Node;
@@ -22,6 +23,7 @@ import sketchy.util.Rand;
 import sketchy.util.TypeUtil;
 import sketchy.util.UniqueList;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -60,8 +62,10 @@ public class Driver {
     private static Method entryMethod;
     private static String initialSketchSourceCode;
     private static ClassBytes initialSketchClassBytes;
-    private static Map<String, Object> initialFieldValues;
+    private static Map<String, Map<String, Object>> initialFieldValues; // {class name, {field name, field value}}
     private static Set<String> allClassNamesInSketch; // including all nested classes
+    private static Set<Class<?>> allClzes; // including all nested classes
+    private static String sketchClzFullName;
     private static String sketchClzSimpleName;
     private static OutputTransformer outputTransformer;
     private static OnDemandTransformer onDemandTransformer;
@@ -126,14 +130,15 @@ public class Driver {
     private static void init(String[] args) {
         Cli.parseArgs(args);
         isDriven = true;
-        sketchClzSimpleName = TypeUtil.getSimpleName(Config.sketchClzFullName);
+        sketchClzFullName = Config.sketchClzFullName;
+        sketchClzSimpleName = TypeUtil.getSimpleName(sketchClzFullName);
 
         // TODO: Check @Entry and @Argument are used correctly in the
         //  template.
 
         // Init argumentMethodNames
         try {
-            Class<?> clz = Class.forName(Config.sketchClzFullName);
+            Class<?> clz = TypeUtil.loadClz(sketchClzFullName, false);
             setArgumentMethodNames(clz);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -152,6 +157,8 @@ public class Driver {
             assigner.transform();
         }
         CompilationUnit cu = assigner.getCu();
+        initialSketchSourceCode = cu.toString();
+
 
         // Set totalHoles
         Data.setTotalHoles(assigner.getIds());
@@ -167,7 +174,6 @@ public class Driver {
         outputTransformer = new OutputTransformer(
                 cu, sketchClzSimpleName, entryMethodName,
                 entryMethodReturnsVoid, Arrays.asList(argumentMethodNames));
-        initialSketchSourceCode = outputTransformer.getOrigCu().toString();
 
         // Write files
         if (Config.saveHoleValues) {
@@ -212,7 +218,7 @@ public class Driver {
         try {
             // Compile and load sketch classes
             ClassLoader cl = compiler.compileAndRedefine(
-                    Config.sketchClzFullName,
+                    sketchClzFullName,
                     initialSketchSourceCode,
                     false);
             // Get local variables available for every hole populating
@@ -225,7 +231,7 @@ public class Driver {
             // Get fields available from every hole, also saving into
             // {@code Data.varsByHole}.
             allClassNamesInSketch = compiler.getCompiledClassNames();
-            Set<Class<?>> allClzes = TypeUtil.loadClzes(allClassNamesInSketch, true, cl);
+            allClzes = TypeUtil.loadClzes(allClassNamesInSketch, true, cl);
             new StaticFieldAnalyzer(allClzes).staticAnalyze();
         } catch (CompilationException | ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -301,16 +307,15 @@ public class Driver {
     private static void prepareForRunningSketch()
             throws ClassNotFoundException, IllegalAccessException {
         try {
-            compiler.compileAndRedefine(Config.sketchClzFullName, initialSketchSourceCode);
+            compiler.compileAndRedefine(sketchClzFullName, initialSketchSourceCode);
         } catch (CompilationException e) {
             throw new RuntimeException(e);
         }
         initialSketchClassBytes = compiler.getClassBytes();
         allClassNamesInSketch = compiler.getCompiledClassNames();
-        sketchClz = Class.forName(Config.sketchClzFullName);
+        sketchClz = TypeUtil.loadClz(sketchClzFullName);
+        allClzes = TypeUtil.loadClzes(allClassNamesInSketch);
         entryMethod = getEntryMethod(sketchClz);
-        // TODO: save and recover not only status of sktech class but
-        //    also any nested classes of it.
         saveInitialSketchStatus();
     }
 
@@ -363,8 +368,10 @@ public class Driver {
                     break;
                 }
 
+                // TODO: to also compare field values of nestetd
+                //  classes
                 if (Config.optStopEarly && TypeUtil.captureStatusAndEquals(
-                        sketchClz, initialFieldValues.keySet(), currFieldValues)) {
+                        sketchClz, initialFieldValues.get(sketchClzFullName).keySet(), currFieldValues)) {
                     // We stop even earlier if we see a status that is
                     // previously seen.
                     break;
@@ -489,7 +496,8 @@ public class Driver {
      */
     private static void setUp()
             throws IllegalAccessException, ClassNotFoundException,
-            NoSuchFieldException {
+            NoSuchFieldException, NoSuchMethodException,
+            InvocationTargetException {
         // TODO: Suggests GC recycle some memory otherwise we will
         //   have OutOfMemoryError some times, but this is not the
         //   best way.
@@ -522,7 +530,7 @@ public class Driver {
     private static void transformSketchAndCompileInMemoryAndRedefineClass()
             throws CompilationException {
         String code = transformOnDemand();
-        compiler.compileAndRedefine(Config.sketchClzFullName, code);
+        compiler.compileAndRedefine(sketchClzFullName, code);
     }
 
     private static String transformOnDemand() {
@@ -537,46 +545,76 @@ public class Driver {
     }
 
     /**
-     * Return the current status of the sketch class.
-     */
-    private static Map<String, Object> getCurrentStatus()
-            throws NoSuchFieldException, IllegalAccessException {
-        if (Config.isProfiling) {
-            long beg = System.currentTimeMillis();
-            Map<String, Object> status =
-                    TypeUtil.captureSpecifiedStatus(sketchClz, initialFieldValues.keySet());
-            totalTrackStatusTime += System.currentTimeMillis() - beg;
-            return status;
-        } else {
-            return TypeUtil.captureSpecifiedStatus(sketchClz, initialFieldValues.keySet());
-        }
-    }
-
-    /**
      * Capture the initial status of the sketch class.
      */
     private static void saveInitialSketchStatus() throws IllegalAccessException {
         if (Config.isProfiling) {
             long beg = System.currentTimeMillis();
-            initialFieldValues = TypeUtil.captureStatus(sketchClz);
+            saveInitialSketchStatus0();
             totalTrackStatusTime += System.currentTimeMillis() - beg;
         } else {
-            initialFieldValues = TypeUtil.captureStatus(sketchClz);
+            saveInitialSketchStatus0();
+        }
+    }
+
+    private static void saveInitialSketchStatus0() throws IllegalAccessException {
+        // Save field values of every class defined from sketch source
+        // file.
+        initialFieldValues = new HashMap<>();
+        for (Class<?> clz : allClzes) {
+            initialFieldValues.put(clz.getName(), TypeUtil.captureImmutableStaticFieldValues(clz));
         }
     }
 
     /**
-     * Recover the initial status of the sketch class.
+     * Recover the initial status of the sketch class by invoking
+     * the special method that copies <clinit> we inserted.
      */
     private static void recoverInitialSketchStatus()
-            throws IllegalAccessException, NoSuchFieldException {
-        if (Config.isProfiling) {
-            long beg = System.currentTimeMillis();
-            TypeUtil.recoverStatus(sketchClz, initialFieldValues);
-            totalTrackStatusTime += System.currentTimeMillis() - beg;
-        } else {
-            TypeUtil.recoverStatus(sketchClz, initialFieldValues);
+            throws IllegalAccessException, NoSuchFieldException,
+            NoSuchMethodException, InvocationTargetException {
+        // TODO: the order matters we should follow the original order
+        //  of the class loaded to re-initialize them.
+        for (Class<?> clz : allClzes) {
+            recoverInitialStatusForSingleClz(clz);
         }
+    }
+
+    private static void recoverInitialStatusForSingleClz(Class<?> clz)
+            throws IllegalAccessException, NoSuchFieldException,
+            NoSuchMethodException, InvocationTargetException {
+        // Restore values for the fields that were not initialized in
+        // the static initializer.
+        for (Map.Entry<String, Object> e: initialFieldValues.get(clz.getName()).entrySet()) {
+            String name = e.getKey();
+            Object val = e.getValue();
+            Field f = clz.getDeclaredField(name);
+            f.setAccessible(true);
+            Class<?> fClz = f.getType();
+            if (org.csutil.util.TypeUtil.isImmutable(fClz)) {
+                // primitives or strings could be constants
+                // and not set in static initializer so we have to
+                // capture/restore their values manually.
+                // e.g., private static final int i = 10;
+                f.set(null, val);
+            } else {
+                // any reference other than strings would be set to
+                // null.
+                f.set(null, null);
+            }
+        }
+
+        // Then we invoke copied static initializer method (if it
+        // exists) to re-initialize some fields that was initialized
+        // there.
+        if (!Data.hasStaticInitializer(clz.getName())) {
+            return;
+        }
+        // TODO: to recover inheritted static fields which were
+        //  initialized by parent class or other dependencies.
+        Method m = clz.getDeclaredMethod(Constants.STATIC_INITIALIZER_COPY_METHOD);
+        m.setAccessible(true);
+        m.invoke(null);
     }
 
     /**
@@ -700,7 +738,7 @@ public class Driver {
             IOUtil.writeToFile(Config.outputDir, outputClzName + "_output.txt", checksum.getValue() + "\n");
             outputJavaFile(outputClzName, code);
         } else if (canOutput) {
-            outputJavaFile(outputClzName, code);outputJavaFile(outputClzName, code);
+            outputJavaFile(outputClzName, code);
         }
 
         Data.outputCount = outputIdx;

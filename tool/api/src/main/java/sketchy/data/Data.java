@@ -26,6 +26,19 @@ import java.util.TreeSet;
 public class Data {
 
     /**
+     * If the sketch has static initializer, i.e., <clinit>.
+     */
+    private static Set<String> hasStaticInitializer = new HashSet<>();
+
+    public static boolean hasStaticInitializer(String className) {
+        return hasStaticInitializer.contains(className);
+    }
+
+    public static void setHasStaticInitializer(String className) {
+        hasStaticInitializer.add(className);
+    }
+
+     /**
      * Cache to store string representations of AST nodes generated
      * in the current run.
      * <p>

@@ -5,6 +5,7 @@ import sketchy.data.Data;
 import sketchy.bytecode.VariableAnalyzer;
 import sketchy.driver.Driver;
 import sketchy.log.Log;
+import sketchy.util.TypeUtil;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -134,7 +135,7 @@ public class InMemoryCompiler {
             String name = entry.getKey();
             byte[] bytes = entry.getValue();
             try {
-                Class<?> clz = Class.forName(name, false, parentCl);
+                Class<?> clz = TypeUtil.loadClz(name, false, parentCl);
                 classDefinitions.add(new ClassDefinition(clz, bytes));
             } catch (ClassNotFoundException e) {
                 // The class is not at classpath, produced in

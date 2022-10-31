@@ -19,6 +19,39 @@ import java.util.Set;
  */
 public class TypeUtil {
 
+    public static void setStaticFieldToDefaultValue(Field f) {
+        try {
+            setStaticFieldToDefaultValue0(f);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setStaticFieldToDefaultValue0(Field f)
+            throws IllegalAccessException {
+        Class<?> clz = f.getType();
+        f.setAccessible(true);
+        if (clz.equals(Byte.TYPE)) {
+            f.setByte(null, (byte) 0);
+        } else if (clz.equals(Short.TYPE)) {
+            f.setShort(null, (short) 0);
+        } else if (clz.equals(Integer.TYPE)) {
+            f.setInt(null, 0);
+        } else if (clz.equals(Long.TYPE)) {
+            f.setLong(null, 0L);
+        } else if (clz.equals(Float.TYPE)) {
+            f.setFloat(null, 0.0f);
+        } else if (clz.equals(Double.TYPE)) {
+            f.setDouble(null, 0.0d);
+        } else if (clz.equals(Character.TYPE)) {
+            f.setChar(null, '\u0000');
+        } else if (clz.equals(Boolean.TYPE)) {
+            f.setBoolean(null, false);
+        } else {
+            f.set(null, null);
+        }
+    }
+
     /**
      * Get a list of names of all the nested classes of the given
      * class.
@@ -92,10 +125,10 @@ public class TypeUtil {
     }
 
     /**
-     * Get the values of all the static non-final fields of the given
-     * class.
+     * Get the values of all the immutable (primitives or strings)
+     * static fields of the given class.
      */
-    public static Map<String, Object> captureStatus(Class<?> clz)
+    public static Map<String, Object> captureImmutableStaticFieldValues(Class<?> clz)
             throws IllegalAccessException {
         Map<String, Object> fieldValues = new HashMap<>();
         for (Field field : clz.getDeclaredFields()) {
@@ -104,7 +137,9 @@ public class TypeUtil {
                 continue;
             }
             field.setAccessible(true);
-            fieldValues.put(field.getName(), deepCopy(field.get(null)));
+            if (org.csutil.util.TypeUtil.isImmutable(field.getType())) {
+                fieldValues.put(field.getName(), deepCopy(field.get(null)));
+            }
         }
         return fieldValues;
     }
@@ -204,12 +239,36 @@ public class TypeUtil {
         return  (dot != -1) ? binClassName.substring(0, dot).intern() : "";
     }
 
+    public static Class<?> loadClz(String className)
+        throws ClassNotFoundException {
+        return loadClz(className, true);
+    }
+
+    public static Class<?> loadClz(
+        String className,
+        boolean initialize)
+        throws ClassNotFoundException {
+        return loadClz(className, initialize, TypeUtil.class.getClassLoader());
+    }
+
     public static Class<?> loadClz(
             String className,
             boolean initialize,
             ClassLoader cl)
             throws ClassNotFoundException {
         return Class.forName(className, initialize, cl);
+    }
+
+    public static Set<Class<?>> loadClzes(Collection<String> classNames)
+            throws ClassNotFoundException {
+    return loadClzes(classNames, true);
+    }
+
+    public static Set<Class<?>> loadClzes(
+            Collection<String> classNames,
+            boolean initialize)
+            throws ClassNotFoundException {
+        return loadClzes(classNames, initialize, TypeUtil.class.getClassLoader());
     }
 
     public static Set<Class<?>> loadClzes(

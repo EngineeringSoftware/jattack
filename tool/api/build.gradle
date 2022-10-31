@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'sketchy'
-version '0.80.7'
+version '0.80.8'
 
 repositories {
     mavenCentral()

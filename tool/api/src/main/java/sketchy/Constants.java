@@ -2,7 +2,6 @@ package sketchy;
 
 import org.objectweb.asm.Opcodes;
 import sketchy.ast.Node;
-import sketchy.ast.exp.Exp;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -92,6 +91,7 @@ public class Constants {
     public static final String TRACK_METHOD = "$_" + TOOL_NAME + "_track";
     public static final String WRITE_TRACKING_RESULTS_METHOD =
             "$_" + TOOL_NAME + "_writeTrackingResults";
+    public static final String STATIC_INITIALIZER_COPY_METHOD = "clinit$copy";
 
     /*--------------------------- Variables. -----------------------*/
 

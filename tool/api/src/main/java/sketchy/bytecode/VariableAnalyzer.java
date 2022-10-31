@@ -1,6 +1,7 @@
 package sketchy.bytecode;
 
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -18,8 +19,8 @@ public class VariableAnalyzer {
             cw = new ClassWriter(cr, 0); // readonly ClassWriter
             cr.accept(new LocalVariableTableClassVisitor(cw, classBinName), 0);
 
-            // Pass 2: insert instructions to update memory before
-            // each eval()
+            // Pass 2: insert instructions to save/update memory
+            // before/after each eval()
             cr = new ClassReader(cw.toByteArray());
             cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
             cr.accept(new SaveLocalVarValuesClassVisitor(cw, classBinName), 0);
@@ -28,11 +29,11 @@ public class VariableAnalyzer {
         }
 
         // DEBUGGING
-        // try {
-        //     IOUtil.saveBytecodeToFile(cw.toByteArray(), classBinName);
-        // } catch (IOException e) {
-        //     e.printStackTrace();
-        // }
+        /* try {
+            sketchy.util.IOUtil.saveBytecodeToFile(cw.toByteArray(), classBinName);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        } */
 
         return cw.toByteArray();
     }
