@@ -12,8 +12,8 @@ import com.puppycrawl.tools.checkstyle.api.CheckstyleException;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FileText;
 import com.puppycrawl.tools.checkstyle.xpath.XpathQueryGenerator;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 
 public final class SuppressionsStringPrinterm106Template {
 
@@ -24,7 +24,7 @@ public final class SuppressionsStringPrinterm106Template {
     private SuppressionsStringPrinterm106Template() {
     }
 
-    @sketchy.annotation.Entry()
+    @jattack.annotation.Entry()
     public static String printSuppressions(File file, String suppressionLineColumnNumber, int tabWidth) throws IOException, CheckstyleException {
         final Matcher matcher = VALID_SUPPRESSION_LINE_COLUMN_NUMBER_REGEX.matcher(suppressionLineColumnNumber);
         if (!matcher.matches()) {

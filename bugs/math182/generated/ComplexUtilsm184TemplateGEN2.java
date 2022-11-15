@@ -6,8 +6,8 @@ import org.apache.commons.math4.exception.util.LocalizedFormats;
 import org.apache.commons.math4.util.FastMath;
 import org.apache.commons.math4.util.IntegerSequence;
 import org.apache.commons.math4.util.IntegerSequence.Range;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 import org.csutil.checksum.WrappedChecksum;
 
 public class ComplexUtilsm184TemplateGEN2 {

@@ -12,8 +12,8 @@ import static org.apache.commons.compress.compressors.deflate64.HuffmanState.DYN
 import static org.apache.commons.compress.compressors.deflate64.HuffmanState.FIXED_CODES;
 import static org.apache.commons.compress.compressors.deflate64.HuffmanState.INITIAL;
 import static org.apache.commons.compress.compressors.deflate64.HuffmanState.STORED;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 import org.csutil.checksum.WrappedChecksum;
 
 class HuffmanDecoderm208TemplateGEN7 implements Closeable {

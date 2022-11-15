@@ -1,5 +1,5 @@
-import sketchy.annotation.Entry;
-import static sketchy.Sketchy.*;
+import jattack.annotation.Entry;
+import static jattack.Boom.*;
 import org.csutil.checksum.WrappedChecksum;
 
 public class M4GEN152 {

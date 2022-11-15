@@ -23,8 +23,8 @@ testing of Java JIT compilers.
    Java, for example, `T.java`.
 
 ```java
-import sketchy.annotation.Entry;
-import static sketchy.Sketchy.*;
+import jattack.annotation.Entry;
+import static jattack.Boom.*;
 
 public class T {
 
@@ -50,8 +50,8 @@ public class T {
    template `T.java` can be `TGen1.java`.
 
 ```java
-import sketchy.annotation.Entry;
-import static sketchy.Sketchy.*;
+import jattack.annotation.Entry;
+import static jattack.Boom.*;
 import org.csutil.checksum.WrappedChecksum;
 
 public class TGen1 {
@@ -80,7 +80,7 @@ public class TGen1 {
             try {
                 cs.update(m());
             } catch (Throwable e) {
-                if (e instanceof sketchy.exception.InvokedFromNotDriverException) {
+                if (e instanceof jattack.exception.InvokedFromNotDriverException) {
                     throw e;
                 }
                 cs.update(e.getClass().getName());

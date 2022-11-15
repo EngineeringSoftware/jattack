@@ -9,8 +9,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 import org.csutil.checksum.WrappedChecksum;
 
 public class Sha2Cryptm292TemplateGEN5 {

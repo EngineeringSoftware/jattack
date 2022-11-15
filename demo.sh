@@ -57,7 +57,7 @@ if [[ ! -f ${JATTACK_JAR} ]]; then
         pushd "${SRC_DIR}" >/dev/null
         ./gradlew -q clean shadowJar
         popd >/dev/null
-        cp "${SRC_DIR}/build/libs/sketchy-${VERSION}-all.jar" "${JATTACK_JAR}"
+        cp "${SRC_DIR}/build/libs/jattack-${VERSION}-all.jar" "${JATTACK_JAR}"
 fi
 
 # Compile the template
@@ -74,7 +74,7 @@ fi
 # Generate programs from the template using JAttack
 echo "Generate from ${class}..."
 rm -fr "${gen_dir}" && mkdir -p "${gen_dir}"
-java -javaagent:"${JATTACK_JAR}" -cp "${build_dir}" sketchy.driver.Driver \
+java -javaagent:"${JATTACK_JAR}" -cp "${build_dir}" jattack.driver.Driver \
      --seed=${seed} \
      --nOutputs=${n_outputs} \
      --outputDir="${gen_dir}" \

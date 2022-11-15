@@ -12,8 +12,8 @@ import com.puppycrawl.tools.checkstyle.api.CheckstyleException;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FileText;
 import com.puppycrawl.tools.checkstyle.xpath.XpathQueryGenerator;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 import org.csutil.checksum.WrappedChecksum;
 
 public final class SuppressionsStringPrinterm106TemplateGEN1 {

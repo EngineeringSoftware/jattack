@@ -12,8 +12,8 @@ import static org.apache.commons.compress.compressors.deflate64.HuffmanState.DYN
 import static org.apache.commons.compress.compressors.deflate64.HuffmanState.FIXED_CODES;
 import static org.apache.commons.compress.compressors.deflate64.HuffmanState.INITIAL;
 import static org.apache.commons.compress.compressors.deflate64.HuffmanState.STORED;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 
 class HuffmanDecoderm208Template implements Closeable {
 
@@ -411,7 +411,7 @@ class HuffmanDecoderm208Template implements Closeable {
         return root;
     }
 
-    @sketchy.annotation.Entry()
+    @jattack.annotation.Entry()
     private static int[] getCodes(final int[] litTable) {
         int max = intVal().eval();
         int[] blCount = new int[65];

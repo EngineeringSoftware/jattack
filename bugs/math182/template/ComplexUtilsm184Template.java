@@ -6,8 +6,8 @@ import org.apache.commons.math4.exception.util.LocalizedFormats;
 import org.apache.commons.math4.util.FastMath;
 import org.apache.commons.math4.util.IntegerSequence;
 import org.apache.commons.math4.util.IntegerSequence.Range;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 
 public class ComplexUtilsm184Template {
 
@@ -1063,7 +1063,7 @@ public class ComplexUtilsm184Template {
         return c;
     }
 
-    @sketchy.annotation.Entry()
+    @jattack.annotation.Entry()
     public static Complex[] split2Complex(float[] real, float[] imag) {
         final int length = intVal().eval();
         final Complex[] c = new Complex[length];

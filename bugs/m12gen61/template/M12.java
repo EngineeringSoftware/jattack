@@ -1,8 +1,8 @@
-package sketchy.examples;
+package jattack.examples;
 
-import sketchy.annotation.Entry;
+import jattack.annotation.Entry;
 
-import static sketchy.Sketchy.*;
+import static jattack.Boom.*;
 
 /**
  * NOTE: C67.

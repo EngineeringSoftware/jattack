@@ -9,8 +9,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static sketchy.Sketchy.*;
-import sketchy.annotation.*;
+import static jattack.Boom.*;
+import jattack.annotation.*;
 
 public class Sha2Cryptm292Template {
 
@@ -32,7 +32,7 @@ public class Sha2Cryptm292Template {
 
     private static final Pattern SALT_PATTERN = Pattern.compile("^\\$([56])\\$(rounds=(\\d+)\\$)?([\\.\\/a-zA-Z0-9]{1,16}).*");
 
-    @sketchy.annotation.Entry()
+    @jattack.annotation.Entry()
     public static String sha256Crypt(final byte[] keyBytes) {
         return sha256Crypt(keyBytes, null);
     }
