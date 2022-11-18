@@ -21,4 +21,5 @@ fi
 export PATH="${JDK_DIR}/bin:${PATH}"
 export JAVA_HOME="${JDK_DIR}"
 
-./tool/jattack
+# Run jattack
+./tool/jattack T 3

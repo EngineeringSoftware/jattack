@@ -4,8 +4,8 @@ readonly _DIR="$( cd -P "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" &&
 readonly CWD="$( pwd )"
 
 # Accept inputs
-class="${1:-T}"; shift # default T
-n_outputs="${1:-3}"; shift # default 3
+class="$1"; shift
+n_outputs="$1"; shift
 
 # Other configurations we may want to touch
 src="${class}.java"
