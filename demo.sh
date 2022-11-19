@@ -22,4 +22,4 @@ export PATH="${JDK_DIR}/bin:${PATH}"
 export JAVA_HOME="${JDK_DIR}"
 
 # Run jattack
-./tool/jattack T 3
+python ./tool/jattack.py T 3
