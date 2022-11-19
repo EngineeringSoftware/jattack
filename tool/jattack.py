@@ -8,6 +8,7 @@ import subprocess
 import time
 from jsonargparse import CLI
 from pathlib import Path
+from seutil.bash import BashError
 
 # Constants.
 _DIR = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -51,24 +52,60 @@ class Args:
         self.output_dir = self.tmpl_dir / "output"
 
         # Make directories
-        su.io.mkdir(self.build_dir, parents=True)
-        su.io.mkdir(self.gen_dir, parents=True)
         su.io.mkdir(self.output_dir, parents=True)
 #ssalc
+
+def generate(
+    clz: str,
+    n_gen: int,
+    src: Path,
+    n_itrs: int,
+    seed: int,
+    gen_dir: Path,
+    tmpl_classpath: Path
+) -> None:
+    """Generate programs from the given template using JAttack.
+
+    raises: BailOutError if JAttack throws any error
+    """
+    # Clean
+    su.io.rm(gen_dir)
+    su.io.mkdir(gen_dir, parents=True)
+
+    # Run JAttack
+    try:
+        bash_run(
+            f"java -javaagent:{JATTACK_JAR} -cp {tmpl_classpath}"
+            f" jattack.driver.Driver"
+            f" --clzName={clz}"
+            f" --nOutputs={n_gen}"
+            f" --srcPath={src}"
+            f" --nInvocations={n_itrs}" +\
+            (f" --seed={seed}" if seed else "") +\
+            f" --outputDir={gen_dir}")
+    except BashError as e:
+        logger.error(e)
+        raise BailOutError("Generating from template failed")
+    #yrt
+#fed
 
 def compile_template(src: Path, build_dir: Path) -> None:
     """Compile the given template.
 
-    :raises: su.bash.BashError if source file cannot be found or compiling fails.
+    :raises: BailOutError if source file cannot be found or compiling
+             fails
     """
     if not src.is_file():
         raise BailOutError(f"File not found: {src}")
     #fi
     try:
+        su.io.mkdir(build_dir, parents=True)
         bash_run(f"javac -cp {JATTACK_JAR} {src} -d {build_dir}")
-    except su.bash.BashError:
+    except BashError:
+        logger.error(e)
         raise BailOutError("Compiling template failed")
     #yrt
+#fed
 
 def require_jattack_jar() -> None:
     """Require JAttack jar.
@@ -125,7 +162,8 @@ def bash_run(
     """Run a command in bash.
     """
     logger.info(f"Bash: {command}")
-    return su.bash.run(command, check_returncode=check_returncode, timeout=timeout)
+    return su.bash.run(command, check_returncode=check_returncode,
+    timeout=timeout)
 #fed
 
 def main(
@@ -146,7 +184,16 @@ def main(
     require_jattack_jar()
 
     try:
-        compile_template(args.src, args.build_dir)
+        logger.setLevel(logging.INFO)
+        compile_template(src=args.src, build_dir=args.build_dir)
+        generate(
+            clz=args.clz,
+            n_gen=args.n_gen,
+            src=args.src,
+            n_itrs=args.n_itrs,
+            seed=args.seed,
+            gen_dir=args.gen_dir,
+            tmpl_classpath=args.build_dir)
     except BailOutError as e:
         print_bail_out(e.msg)
     #yrt
