@@ -7,6 +7,7 @@ import seutil as su
 import subprocess
 import time
 from jsonargparse import CLI
+from natsort import natsorted
 from pathlib import Path
 from seutil.bash import BashError
 
@@ -55,18 +56,38 @@ class Args:
         su.io.mkdir(self.output_dir, parents=True)
 #ssalc
 
+def exceute_and_test(
+    gen_dir: Path,
+    classpath: Path
+) -> None:
+    """
+    Execute every generated program on different JIT compilers and       perform differential testing over results.
+
+    :raises: BailOutError if something is wrong
+    """
+    # num_gen could be different with n_gen given by the user in the
+    # case where a template defines a small search space while n_gen
+    # is given a large number.
+    all_gen_programs = natsorted(gen_dir.glob("*.java"))
+    num_gen = len(all_gen_programs)
+    print_test_plan(num_gen)
+#fed
+
 def generate(
     clz: str,
     n_gen: int,
     src: Path,
     n_itrs: int,
     seed: int,
+    jattack_jar: Path,
     gen_dir: Path,
     tmpl_classpath: Path
 ) -> None:
-    """Generate programs from the given template using JAttack.
+    """
+    Generate programs from the given template using JAttack.
 
-    raises: BailOutError if JAttack throws any error
+    :raises: BailOutError if JAttack throws any error or no reachable
+                          hole in the template
     """
     # Clean
     su.io.rm(gen_dir)
@@ -75,7 +96,7 @@ def generate(
     # Run JAttack
     try:
         bash_run(
-            f"java -javaagent:{JATTACK_JAR} -cp {tmpl_classpath}"
+            f"java -javaagent:{jattack_jar} -cp {tmpl_classpath}"
             f" jattack.driver.Driver"
             f" --clzName={clz}"
             f" --nOutputs={n_gen}"
@@ -87,10 +108,17 @@ def generate(
         logger.error(e)
         raise BailOutError("Generating from template failed")
     #yrt
+
+    # Literally no hole in the template or no hole reached in the
+    # template during generation
+    if list(gen_dir.glob("*0.java")):
+        raise BailOutError("No reachable hole in the template!")
+    #fi
 #fed
 
 def compile_template(src: Path, build_dir: Path) -> None:
-    """Compile the given template.
+    """
+    Compile the given template.
 
     :raises: BailOutError if source file cannot be found or compiling
              fails
@@ -108,8 +136,9 @@ def compile_template(src: Path, build_dir: Path) -> None:
 #fed
 
 def require_jattack_jar() -> None:
-    """Require JAttack jar.
-    Will build the jar if it does not exist.
+    """
+    Require JAttack jar.
+    Will build the jar only if it does not exist.
     """
     if not JATTACK_JAR.is_file():
         build_jattack_jar()
@@ -117,7 +146,10 @@ def require_jattack_jar() -> None:
 #fed
 
 def build_jattack_jar() -> None:
-    """Build JAttack jar.
+    """
+    Build JAttack jar.
+
+    :raises BailOutError if buildinfg JAttack jar fails
     """
     logger.info(f"Build JAttack jar.")
     src_dir = _DIR / "api"
@@ -131,19 +163,33 @@ def build_jattack_jar() -> None:
     #htiw
     re.compile = src_dir / "build.gradle"
     os.chdir(src_dir)
-    bash_run("./gradlew -q clean shadowJar")
+    try:
+        bash_run("./gradlew -q clean shadowJar")
+    except BashError as e:
+        logger.error(e)
+        raise BailOutError
+    #yrt
     jar = src_dir / "build" / "libs" / f"jattack-{version}-all.jar"
     bash_run(f"cp {jar} {JATTACK_JAR}")
     os.chdir(CWD)
 #fed
 
+def print_test_plan(num: int) -> None:
+    """
+    Print test plan as TAP format.
+    """
+    print(f"1..{num}")
+#fed
+
 def print_bail_out(msg: str) -> None:
-    """Print \"bail out\" as TAP format.
+    """
+    Print \"bail out\" as TAP format.
     """
     print(f"Bail out! {msg}")
 
 def print_not_ok(test_number: str, msg: str, desc: str) -> None:
-    """Print \"not ok\": test point as TAP format.
+    """
+    Print \"not ok\": test point as TAP format.
     """
     print(f"not ok {test_number} - {desc}")
     print("  ---")
@@ -151,15 +197,18 @@ def print_not_ok(test_number: str, msg: str, desc: str) -> None:
     print("  ...")
 
 def print_ok(tets_number: str, desc: str) -> None:
-    """Print \"ok\" tets point  as TAP format.
+    """
+    Print \"ok\" tets point  as TAP format.
     """
     print(f"ok {test_number} - {desc}")
 
 def bash_run(
     command: str,
     check_returncode: int = 0,
-    timeout: int = None) -> subprocess.CompletedProcess:
-    """Run a command in bash.
+    timeout: int = None
+) -> subprocess.CompletedProcess:
+    """
+    Run a command in bash.
     """
     logger.info(f"Bash: {command}")
     return su.bash.run(command, check_returncode=check_returncode,
@@ -171,10 +220,13 @@ def main(
     n_gen: int,
     src: str = "{clz}.java",
     n_itrs: int = 100_000,
-    seed: int = None) -> None:
-    """Main.
+    seed: int = None
+) -> None:
+    """
+    Main.
 
-    :param clz: the fully qualified class name of the template, separated with \".\"
+    :param clz: the fully qualified class name of the template,
+                separated with \".\"
     :param n_gen: the total number of generated programs
     :param src: the path to the source file of the template
     :param n_itrs: the number of iterations to trigeer JIT
@@ -184,7 +236,6 @@ def main(
     require_jattack_jar()
 
     try:
-        logger.setLevel(logging.INFO)
         compile_template(src=args.src, build_dir=args.build_dir)
         generate(
             clz=args.clz,
@@ -192,8 +243,12 @@ def main(
             src=args.src,
             n_itrs=args.n_itrs,
             seed=args.seed,
+            jattack_jar=JATTACK_JAR,
             gen_dir=args.gen_dir,
             tmpl_classpath=args.build_dir)
+        exceute_and_test(
+            gen_dir=args.gen_dir,
+            classpath=os.pathsep.join(str(p) for p in [JATTACK_JAR, args.build_dir]))
     except BailOutError as e:
         print_bail_out(e.msg)
     #yrt
