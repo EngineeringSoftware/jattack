@@ -57,8 +57,11 @@ class Args:
 #ssalc
 
 def exceute_and_test(
+    tmpl_clz: str,
     gen_dir: Path,
-    classpath: Path
+    output_dir: Path,
+    jattack_jar: Path,
+    build_dir: Path
 ) -> None:
     """
     Execute every generated program on different JIT compilers and       perform differential testing over results.
@@ -68,9 +71,36 @@ def exceute_and_test(
     # num_gen could be different with n_gen given by the user in the
     # case where a template defines a small search space while n_gen
     # is given a large number.
-    all_gen_programs = natsorted(gen_dir.glob("*.java"))
-    num_gen = len(all_gen_programs)
+    all_gen_paths = [ Path(p) for p in natsorted(gen_dir.glob("*.java"))]
+    num_gen = len(all_gen_paths)
     print_test_plan(num_gen)
+    pkg = ".".join(tmpl_clz.split(".")[:-1])
+    cp = str(jattack_jar) + os.pathsep + str(build_dir)
+
+    # Execute every generated porgrams
+    for i, gen_src in enumerate(all_gen_paths):
+        test_number = i + 1
+        gen_clz = pkg + "." + gen_src.stem if pkg else gen_src.stem
+        output_dir_per_gen = output_dir / gen_clz
+
+        # Clean
+        su.io.rm(output_dir_per_gen)
+        su.io.mkdir(output_dir_per_gen, parents=True)
+
+        # Compile
+        try:
+            bash_run(f"javac -cp {cp} {gen_src} -d {build_dir}")
+        except BashError as e:
+            logger.warning(e)
+            print_not_ok(
+                test_number=test_number,
+                desc=gen_clz,
+                msg="Compiling generated program failed")
+            continue
+        #yrt
+
+        # Execute on all JIT compilers.
+    #rof
 #fed
 
 def generate(
@@ -187,13 +217,13 @@ def print_bail_out(msg: str) -> None:
     """
     print(f"Bail out! {msg}")
 
-def print_not_ok(test_number: str, msg: str, desc: str) -> None:
+def print_not_ok(test_number: str, desc: str, msg: str) -> None:
     """
     Print \"not ok\": test point as TAP format.
     """
     print(f"not ok {test_number} - {desc}")
     print("  ---")
-    print("  message: '$msg'")
+    print(f"  message: '{msg}'")
     print("  ...")
 
 def print_ok(tets_number: str, desc: str) -> None:
@@ -237,7 +267,7 @@ def main(
 
     try:
         compile_template(src=args.src, build_dir=args.build_dir)
-        generate(
+        """ generate(
             clz=args.clz,
             n_gen=args.n_gen,
             src=args.src,
@@ -245,10 +275,13 @@ def main(
             seed=args.seed,
             jattack_jar=JATTACK_JAR,
             gen_dir=args.gen_dir,
-            tmpl_classpath=args.build_dir)
+            tmpl_classpath=args.build_dir) """
         exceute_and_test(
+            tmpl_clz=args.clz,
             gen_dir=args.gen_dir,
-            classpath=os.pathsep.join(str(p) for p in [JATTACK_JAR, args.build_dir]))
+            output_dir=args.output_dir,
+            jattack_jar=JATTACK_JAR,
+            build_dir=args.build_dir)
     except BailOutError as e:
         print_bail_out(e.msg)
     #yrt
