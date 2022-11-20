@@ -267,6 +267,8 @@ def main(
     src: str = "{clz}.java",
     n_itrs: int = 100_000,
     seed: int = None,
+    #  By default we use java in system path and compare level 4 and
+    # level 1.
     javas: List[Tuple[str, List[str]]] = [
         (
             os.environ["JAVA_HOME"],
@@ -286,7 +288,17 @@ def main(
     :param n_gen: the total number of generated programs
     :param src: the path to the source file of the template
     :param n_itrs: the number of iterations to trigeer JIT
-    :param seed: random seed used during generation
+    :param seed: the random seed used during generation
+    :param javas: the javas to be differentially tested, which should
+                  be provided as a list of a tuple of java home string
+                  and a list of any java option strings,
+                  e.g., --javas=[
+                    /home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],
+                    /home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]
+                  ] means we want to differentially test java 11 at
+                  level 4 and java 17 at level 1.
+                  By default, $JAVA_HOME in the environment with level
+                  4 and level 1 will be used.
     """
 
     args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, javas)
