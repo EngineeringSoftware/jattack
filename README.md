@@ -21,12 +21,6 @@ random testing to detect critical bugs.
 7. [Citation](#Citation)
 8. [Contact](#Contact)
 
-## Requirements
-
-- Linux with GNU Bash (tested on Ubuntu 20.04)
-- JDK >=11
-- Python 3.8
-
 ## Demo
 
 This demo reproduces a bug of OpenJDK jdk-11.0.8+10 C2 JIT compiler
@@ -131,6 +125,12 @@ public class TGen1 {
 #
 ```
 
+## Requirements
+
+- Linux with GNU Bash (tested on Ubuntu 20.04)
+- JDK >=11
+- Python 3.8
+
 ## Install
 
 ```bash
@@ -138,35 +138,46 @@ cd tool
 ./install.sh
 ```
 
-The `tool/install.sh` script will build JAttack jar, install python
-packages and create an executable `jattack` in `tools`.
+The `install.sh` script builds JAttack jar, installs python packages
+and creates an executable `jattack` in `tools`.
 
 ## Use
 
 ```bash
 cd tool
-./jattack --clz <fully qualified class name of the template> --n_gen <number of generated programs> --java_envs <java environments under test>
+./jattack --clz TEMPLATE_CLASS_NAME --n_gen NUM_OF_GENERATED_PROGRAMS \
+    [--java_envs JAVA_ENVIRONMENTS_UNDER_TEST]
+    [--src TEMPLATE_SOURCE_PATH]
+    [--n_itrs NUM_OF_ITERATIONS_TO_TRIGGER_JIT]
+    [--seed RANDOM_SEED]
 ```
 
-Example of run commands of:
+Examples of run commands:
 
-```bash
-./tool/jattack --clz T.java --n_gen 3
-```
+- Provide only two required arguments `--clz` `--n_gen`.
 
-This command generates 3 programs from template `T.java` and uses the
-3 generated programs to test default java environments, which is found
-in $JAVA_HOME, at level 4 and level 1.
+  ```bash
+  ./tool/jattack --clz T.java --n_gen 3
+  ```
 
-```bash
-./tool/jattack --clz T --n_gen 3 --java_envs [['/home/zzq/opt/jdk-11.0.15',['-XX:TieredStopAtLevel=4']],['/home/zzq/opt/jdk-17.0.3',['-XX:TieredStopAtLevel=1']]]
-```
+  This command generates 3 programs from template `T.java` and uses
+  the 3 generated programs to test default java environments found in
+  `$JAVA_HOME` at level 4 and level 1, which are:
+  - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=4`
+  - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=1`
 
-This command generates 3 programs from template `T.java` and uses the
-3 generated programs to test given java environments with given
-options:
-- `/home/zzq/opt/jdk-11.0.15/bin/java -XX:TieredStopAtLevel=4`
-- `/home/zzq/opt/jdk-17.0.3/bin/java -XX:TieredStopAtLevel=1`
+- Provide customized java environments under test.
+
+  ```bash
+  ./tool/jattack --clz T --n_gen 3 \
+      --java_envs [['/home/zzq/opt/jdk-11.0.15',['-XX:TieredStopAtLevel=4']],['/home/zzq/opt/jdk-17.0.3',['-XX:TieredStopAtLevel=1']]]
+  ```
+
+  This command generates 3 programs from template `T.java` and uses
+  the 3 generated programs to test given java environments with given
+  options, which are
+  - `/home/zzq/opt/jdk-11.0.15/bin/java -XX:TieredStopAtLevel=4`
+  - `/home/zzq/opt/jdk-17.0.3/bin/java -XX:TieredStopAtLevel=1`
 
 Full list of arguments:
 ```bash
