@@ -3,5 +3,8 @@
 build/
 !gradle-wrapper.jar
 
+# VS Code
+.vscode/
+
 # Install
 jattack

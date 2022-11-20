@@ -2,7 +2,6 @@
 
 import logging
 import os
-import re
 import seutil as su
 import subprocess
 import time
@@ -250,7 +249,7 @@ def compile_template(src: Path, build_dir: Path, javac: Path) -> None:
     try:
         su.io.mkdir(build_dir, parents=True)
         bash_run(f"{javac} -cp {JATTACK_JAR} {src} -d {build_dir}")
-    except BashError:
+    except BashError as e:
         logger.error(e)
         raise BailOutError("Compiling template failed")
     #yrt
@@ -306,18 +305,7 @@ def main(
     src: str = None,
     n_itrs: int = 100_000,
     seed: int = None,
-    #  By default we use java in system path and compare level 4 and
-    # level 1.
-    java_envs: List[Tuple[str, List[str]]] = [
-        (
-            os.environ["JAVA_HOME"],
-            ["-XX:TieredStopAtLevel=4"],
-        ),
-        (
-            os.environ["JAVA_HOME"],
-            ["-XX:TieredStopAtLevel=1"],
-        ),
-    ]
+    java_envs: List[Tuple[str, List[str]]] = None
 ) -> None:
     """
     Main.
@@ -328,27 +316,50 @@ def main(
     :param src: the path to the source file of the template, by default using `./{clz}.java`
     :param n_itrs: the number of iterations to trigeer JIT
     :param seed: the random seed used by JAttack during generation,
-        fix this to reproduce a previous generation
+        fix this to reproduce a previous generation.
     :param java_envs: the java environments to be differentially
         tested, which should be provided as a list of a tuple of java
-        home string and a list of any java option strings, e.g.,
+        home string and a list of java option strings, e.g.,
         `--java_envs=[/home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],/home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]]`
         means we want to differentially test java 11 at level 4 and
         java 17 at level 1.
-        By default, $JAVA_HOME in the system environment with level 4
-        and level 1 will be used.
         Note, the first java environment of the list will be used to
         compile the template and generated programs, which means the
         version of the first java environment has to be less than or
         equal to the remaining ones. Also, the first java environment
         is used to run JAttack itself, which means its version should
         be at least 11.
+        By default, $JAVA_HOME in the system with level 4 and level 1
+        will be used, i.e.,
+        `[$JAVA_HOME,[-XX:TieredStopAtLevel=4],$JAVA_HOME,[-XX:TieredStopAtLevel=1]]`
     """
 
     if src is None:
         src = CWD / f"{clz}.java"
     else:
         src = Path(src)
+    #fi
+    if java_envs is None:
+        java_home = os.environ.get("JAVA_HOME")
+        if java_home is None:
+            raise ValueError(
+                "JAVA_HOME environment variable is not set. Please "
+                "either set it or explicitly pass `--java_envs` "
+                "argument.")
+        #fi
+        # By default we use java in $JAVA_HOME and compare level 4 and
+        # level 1.
+        java_envs = [
+            (
+                os.environ["JAVA_HOME"],
+                ["-XX:TieredStopAtLevel=4"],
+            ),
+            (
+                os.environ["JAVA_HOME"],
+                ["-XX:TieredStopAtLevel=1"],
+            ),
+        ]
+        #yrt
     #fi
     args = Args(
         clz=clz,
