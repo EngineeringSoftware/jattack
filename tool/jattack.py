@@ -60,6 +60,20 @@ class Args:
             ) for java_env in java_envs
         ]
 
+        # Check all java environments are valid
+        for java_env in self.java_envs:
+            if not (java_env.java_home / "bin" / "java").is_file():
+                raise ValueError(
+                    "java not found in given java home under test: "
+                    f"{java_env.java_home / 'bin'}")
+            #fi
+            if not (java_env.java_home / "bin" / "javac").is_file():
+                raise ValueError(
+                    "javac not found in given java home under test: "
+                    f"{java_env.java_home / 'bin'}")
+            #fi
+        #rof
+
         # Use the first java environment to compile and run JAttack
         # itself
         self.javac = self.java_envs[0].java_home / "bin" / "javac"
