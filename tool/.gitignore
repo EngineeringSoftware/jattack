@@ -2,3 +2,6 @@
 .gradle/
 build/
 !gradle-wrapper.jar
+
+# Install
+jattack

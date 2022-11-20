@@ -233,45 +233,6 @@ def compile_template(src: Path, build_dir: Path, javac: Path) -> None:
     #yrt
 #fed
 
-def require_jattack_jar() -> None:
-    """
-    Require JAttack jar.
-    Will build the jar only if it does not exist.
-    """
-    if not JATTACK_JAR.is_file():
-        build_jattack_jar()
-    #fi
-#fed
-
-def build_jattack_jar() -> None:
-    """
-    Build JAttack jar.
-
-    :raises BailOutError if buildinfg JAttack jar fails
-    """
-    logger.info(f"Build JAttack jar.")
-    src_dir = _DIR / "api"
-    with open(src_dir / "build.gradle") as f:
-        for line in f:
-            res = re.search('^version (.*)$', line)
-            if res:
-                version = res.group(1)
-            #fi
-        #rof
-    #htiw
-    re.compile = src_dir / "build.gradle"
-    os.chdir(src_dir)
-    try:
-        bash_run("./gradlew -q clean shadowJar")
-    except BashError as e:
-        logger.error(e)
-        raise BailOutError("Building JAttack jar failed")
-    #yrt
-    jar = src_dir / "build" / "libs" / f"jattack-{version}-all.jar"
-    bash_run(f"cp {jar} {JATTACK_JAR}")
-    os.chdir(CWD)
-#fed
-
 def print_test_plan(num: int) -> None:
     """
     Print test plan as TAP format.
@@ -361,7 +322,6 @@ def main(
     """
 
     args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, java_envs)
-    require_jattack_jar()
 
     try:
         compile_template(

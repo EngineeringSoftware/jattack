@@ -2,7 +2,7 @@
 
 readonly _DIR="$( cd -P "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
 
-# Download jdk.
+# Download a buggy jdk to reproduce a bug.
 readonly DL_DIR="${_DIR}/.jattack/downloads"
 mkdir -p "${DL_DIR}"
 readonly JDK_DIR="${DL_DIR}/jdk-11.0.8+10"
@@ -21,6 +21,9 @@ fi
 export PATH="${JDK_DIR}/bin:${PATH}"
 export JAVA_HOME="${JDK_DIR}"
 
-# Run jattack
-#./tool/jattack T 3
-python ./tool/jattack.py --clz T --n_gen 3 --seed 42
+# Install jattack (JDK >=11 and Python 3.8)
+./tool/install.sh
+
+# Run jattack (We fix random seed by --seed 42 to ensure the bug is
+# reproduced consistently)
+./tool/jattack --clz T --n_gen 3 --seed 42
