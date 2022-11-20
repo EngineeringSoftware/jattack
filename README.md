@@ -12,12 +12,13 @@ the power of developers insights, who are providing templates, and
 random testing to detect critical bugs.
 
 ## Table of contents
-1. [Requirements](#Requirements)
-2. [Demo](#Demo)
+
+1. [Demo](#Demo)
+2. [Requirements](#Requirements)
 3. [Install](#Install)
 4. [Use](#Use)
 5. [Docs](#Docs)
-6. [Bugs](#Bugs)
+6. [Hall of Fame](#Hall of Fame)
 7. [Citation](#Citation)
 8. [Contact](#Contact)
 
@@ -230,7 +231,7 @@ cd tool/api
 2. Open `tool/api/build/docs/javadoc/index.html` in your favorite
    browser.
 
-## Bugs
+## Hall of Fame
 
 Directory `bugs` contains all six JIT bugs found by JAttack, each of
 which contains a template program, a generated program and a minimized
