@@ -172,7 +172,7 @@ cd tool
 
 Examples of run commands:
 
-- Provide only two required arguments `--clz` `--n_gen`.
+- Provide only two required arguments `--clz` and `--n_gen`.
 
   ```bash
   ./tool/jattack --clz T --n_gen 3
@@ -212,7 +212,7 @@ Examples of run commands:
             - java_env1.txt
   ```
 
-- Provide customized java environments under test.
+- Provide customized java environments under test using `--java_envs`.
 
   ```bash
   ./tool/jattack --clz T --n_gen 3 \
@@ -227,9 +227,11 @@ Examples of run commands:
 
 JAttack's command-line output is in [TAP](https://testanything.org/)
 format, so you can make it prettier using any TAP consumer, like
-[webview](https://gitlab.com/esr/tapview):
+[tapview](https://gitlab.com/esr/tapview):
 ```
-$ ./tool/jattack --clz T --n_gen 3 --java_envs [[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=4']],[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=1']]] --seed 42 | tapview
+$ ./tool/jattack --clz T --n_gen 3 --seed 42 \
+    --java_envs [[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=4']],[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=1']]] \
+    | tapview
 F..
 not ok 1 - TGen1
   ---
@@ -278,10 +280,10 @@ The following steps builds javadoc for JAttack jar. Please refer to
 class `Boom` for how to use provided APIs to write your own template.
 
 1. Build javadoc from source code.
-```bash
-cd tool/api
-./gradlew javadoc
-```
+   ```bash
+   cd tool/api
+   ./gradlew javadoc
+   ```
 
 2. Open `tool/api/build/docs/javadoc/index.html` in your favorite
    browser.
