@@ -78,10 +78,13 @@ class Args:
         # itself
         self.javac = self.java_envs[0].java_home / "bin" / "javac"
         self.java = self.java_envs[0].java_home / "bin" / "java"
+
+        # Set up directories
         self.tmpl_dir = DOT_DIR / self.clz
         self.build_dir = self.tmpl_dir / "build"
         self.gen_dir = self.tmpl_dir / "gen"
         self.output_dir = self.tmpl_dir / "output"
+    #fed
 #ssalc
 
 def exceute_and_test(
