@@ -33,7 +33,7 @@ class BailOutError(RuntimeError):
     #fed
 #ssalc
 
-class Java(NamedTuple):
+class JavaEnv(NamedTuple):
     java_home: Path
     java_opts: List[str]
 #ssalc
@@ -46,17 +46,23 @@ class Args:
         src: str,
         n_itrs: int,
         seed: int,
-        javas: List[Tuple[str, List[str]]]
+        java_envs: List[Tuple[str, List[str]]]
     ):
         self.clz = clz
         self.n_gen = n_gen
         self.src = Path(src)
         self.n_itrs = n_itrs
         self.seed = seed
-        self.javas = [
-            Java(Path(java[0]), java[1]) for java in javas
+        self.java_envs = [
+            JavaEnv(
+                Path(java_env[0]),
+                java_env[1]
+            ) for java_env in java_envs
         ]
 
+        # Use the first java to compile and generate
+        self.javac = self.java_envs[0].java_home / "bin" / "javac"
+        self.java = self.java_envs[0].java_home / "bin" / "java"
         self.tmpl_dir = DOT_DIR / self.clz
         self.build_dir = self.tmpl_dir / "build"
         self.gen_dir = self.tmpl_dir / "gen"
@@ -72,7 +78,7 @@ def exceute_and_test(
     output_dir: Path,
     jattack_jar: Path,
     build_dir: Path,
-    javas: List[Java]
+    java_envs: List[JavaEnv]
 ) -> None:
     """
     Execute every generated program on different JIT compilers and       perform differential testing over results.
@@ -111,9 +117,12 @@ def exceute_and_test(
         #yrt
 
         # Execute on all Javas.
-        for java in javas:
-            bash_run(f"{java.java_home / 'bin' / 'java' } -version")
+        for java_env in java_envs:
+            bash_run(f"{java_env.java_home / 'bin' / 'java' } -version")
+
         #rof
+
+        print_ok(test_number=test_number, desc=gen_clz)
     #rof
 #fed
 
@@ -125,7 +134,8 @@ def generate(
     seed: int,
     jattack_jar: Path,
     gen_dir: Path,
-    tmpl_classpath: Path
+    tmpl_classpath: Path,
+    java: Path
 ) -> None:
     """
     Generate programs from the given template using JAttack.
@@ -140,7 +150,7 @@ def generate(
     # Run JAttack
     try:
         bash_run(
-            f"java -javaagent:{jattack_jar} -cp {tmpl_classpath}"
+            f"{java} -javaagent:{jattack_jar} -cp {tmpl_classpath}"
             f" jattack.driver.Driver"
             f" --clzName={clz}"
             f" --nOutputs={n_gen}"
@@ -240,9 +250,9 @@ def print_not_ok(test_number: str, desc: str, msg: str) -> None:
     print(f"  message: '{msg}'")
     print("  ...")
 
-def print_ok(tets_number: str, desc: str) -> None:
+def print_ok(test_number: str, desc: str) -> None:
     """
-    Print \"ok\" tets point  as TAP format.
+    Print \"ok\" test point  as TAP format.
     """
     print(f"ok {test_number} - {desc}")
 
@@ -269,7 +279,7 @@ def main(
     seed: int = None,
     #  By default we use java in system path and compare level 4 and
     # level 1.
-    javas: List[Tuple[str, List[str]]] = [
+    java_envs: List[Tuple[str, List[str]]] = [
         (
             os.environ["JAVA_HOME"],
             ["-XX:TieredStopAtLevel=4"],
@@ -289,24 +299,27 @@ def main(
     :param src: the path to the source file of the template
     :param n_itrs: the number of iterations to trigeer JIT
     :param seed: the random seed used during generation
-    :param javas: the javas to be differentially tested, which should
-                  be provided as a list of a tuple of java home string
-                  and a list of any java option strings,
-                  e.g., --javas=[
-                    /home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],
-                    /home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]
-                  ] means we want to differentially test java 11 at
-                  level 4 and java 17 at level 1.
-                  By default, $JAVA_HOME in the environment with level
-                  4 and level 1 will be used.
+    :param java_envs: the java environments to be differentially
+        tested, which should be provided as a list of a tuple of java
+        home string and a list of any java option strings, e.g., --java_envs=[
+            /home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],
+            /home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]
+        ]
+        means we want to differentially test java 11 at level 4 and
+        java 17 at level 1.
+        By default, $JAVA_HOME in the environment with level 4 and
+        level 1 will be used.
+        Note, the first java environment of the list will be used to
+        compile the template and generated programs, and run JAttack
+        itself, which should be at least java 11.
     """
 
-    args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, javas)
+    args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, java_envs)
     require_jattack_jar()
 
     try:
         compile_template(src=args.src, build_dir=args.build_dir)
-        """ generate(
+        generate(
             clz=args.clz,
             n_gen=args.n_gen,
             src=args.src,
@@ -314,14 +327,15 @@ def main(
             seed=args.seed,
             jattack_jar=JATTACK_JAR,
             gen_dir=args.gen_dir,
-            tmpl_classpath=args.build_dir) """
+            tmpl_classpath=args.build_dir,
+            java=args.java)
         exceute_and_test(
             tmpl_clz=args.clz,
             gen_dir=args.gen_dir,
             output_dir=args.output_dir,
             jattack_jar=JATTACK_JAR,
             build_dir=args.build_dir,
-            javas=args.javas)
+            java_envs=args.java_envs)
     except BailOutError as e:
         print_bail_out(e.msg)
     #yrt
