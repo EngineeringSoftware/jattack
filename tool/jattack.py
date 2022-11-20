@@ -78,6 +78,7 @@ def exceute_and_test(
     output_dir: Path,
     jattack_jar: Path,
     build_dir: Path,
+    javac: Path,
     java_envs: List[JavaEnv]
 ) -> None:
     """
@@ -106,7 +107,7 @@ def exceute_and_test(
 
         # Compile
         try:
-            bash_run(f"javac -cp {cp} {gen_src} -d {build_dir}")
+            bash_run(f"{javac} -cp {cp} {gen_src} -d {build_dir}")
         except BashError as e:
             logger.error(e)
             print_not_ok(
@@ -170,7 +171,7 @@ def generate(
     #fi
 #fed
 
-def compile_template(src: Path, build_dir: Path) -> None:
+def compile_template(src: Path, build_dir: Path, javac: Path) -> None:
     """
     Compile the given template.
 
@@ -182,7 +183,7 @@ def compile_template(src: Path, build_dir: Path) -> None:
     #fi
     try:
         su.io.mkdir(build_dir, parents=True)
-        bash_run(f"javac -cp {JATTACK_JAR} {src} -d {build_dir}")
+        bash_run(f"{javac} -cp {JATTACK_JAR} {src} -d {build_dir}")
     except BashError:
         logger.error(e)
         raise BailOutError("Compiling template failed")
@@ -318,7 +319,10 @@ def main(
     require_jattack_jar()
 
     try:
-        compile_template(src=args.src, build_dir=args.build_dir)
+        compile_template(
+            src=args.src,
+            build_dir=args.build_dir,
+            javac=args.javac)
         generate(
             clz=args.clz,
             n_gen=args.n_gen,
@@ -335,6 +339,7 @@ def main(
             output_dir=args.output_dir,
             jattack_jar=JATTACK_JAR,
             build_dir=args.build_dir,
+            javac=args.javac,
             java_envs=args.java_envs)
     except BailOutError as e:
         print_bail_out(e.msg)
