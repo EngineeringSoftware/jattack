@@ -12,14 +12,14 @@ the power of developers insights, who are providing templates, and
 random testing to detect critical bugs.
 
 ## Table of contents
-1. Requirements[#Requirements]
-2. Demo[#Demo]
-3. Install[#Install]
-4. Use[#Use]
-5. Docs[#Docs]
-6. Bugs[#Bugs]
-7. Citation[#Citation]
-8. Contact[#Contact]
+1. [Requirements](#Requirements)
+2. [Demo](#Demo)
+3. [Install](#Install)
+4. [Use](#Use)
+5. [Docs](#Docs)
+6. [Bugs](#Bugs)
+7. [Citation](#Citation)
+8. [Contact](#Contact)
 
 ## Requirements
 
