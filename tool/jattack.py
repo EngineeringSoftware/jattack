@@ -10,6 +10,7 @@ from jsonargparse import CLI
 from natsort import natsorted
 from pathlib import Path
 from seutil.bash import BashError
+from typing import List, NamedTuple, Tuple
 
 # Constants.
 _DIR = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -32,6 +33,11 @@ class BailOutError(RuntimeError):
     #fed
 #ssalc
 
+class Java(NamedTuple):
+    java_home: Path
+    java_opts: List[str]
+#ssalc
+
 class Args:
     def __init__(
         self,
@@ -39,13 +45,17 @@ class Args:
         n_gen: int,
         src: str,
         n_itrs: int,
-        seed: int
+        seed: int,
+        javas: List[Tuple[str, List[str]]]
     ):
         self.clz = clz
         self.n_gen = n_gen
         self.src = Path(src)
         self.n_itrs = n_itrs
         self.seed = seed
+        self.javas = [
+            Java(Path(java[0]), java[1]) for java in javas
+        ]
 
         self.tmpl_dir = DOT_DIR / self.clz
         self.build_dir = self.tmpl_dir / "build"
@@ -61,7 +71,8 @@ def exceute_and_test(
     gen_dir: Path,
     output_dir: Path,
     jattack_jar: Path,
-    build_dir: Path
+    build_dir: Path,
+    javas: List[Java]
 ) -> None:
     """
     Execute every generated program on different JIT compilers and       perform differential testing over results.
@@ -91,7 +102,7 @@ def exceute_and_test(
         try:
             bash_run(f"javac -cp {cp} {gen_src} -d {build_dir}")
         except BashError as e:
-            logger.warning(e)
+            logger.error(e)
             print_not_ok(
                 test_number=test_number,
                 desc=gen_clz,
@@ -99,7 +110,10 @@ def exceute_and_test(
             continue
         #yrt
 
-        # Execute on all JIT compilers.
+        # Execute on all Javas.
+        for java in javas:
+            bash_run(f"{java.java_home / 'bin' / 'java' } -version")
+        #rof
     #rof
 #fed
 
@@ -197,7 +211,7 @@ def build_jattack_jar() -> None:
         bash_run("./gradlew -q clean shadowJar")
     except BashError as e:
         logger.error(e)
-        raise BailOutError
+        raise BailOutError("Building JAttack jar failed")
     #yrt
     jar = src_dir / "build" / "libs" / f"jattack-{version}-all.jar"
     bash_run(f"cp {jar} {JATTACK_JAR}")
@@ -241,8 +255,10 @@ def bash_run(
     Run a command in bash.
     """
     logger.info(f"Bash: {command}")
-    return su.bash.run(command, check_returncode=check_returncode,
+    res = su.bash.run(command, check_returncode=check_returncode,
     timeout=timeout)
+    logger.info(res.stdout)
+    logger.error(res.stderr)
 #fed
 
 def main(
@@ -250,7 +266,17 @@ def main(
     n_gen: int,
     src: str = "{clz}.java",
     n_itrs: int = 100_000,
-    seed: int = None
+    seed: int = None,
+    javas: List[Tuple[str, List[str]]] = [
+        (
+            os.environ["JAVA_HOME"],
+            ["-XX:TieredStopAtLevel=4"],
+        ),
+        (
+            os.environ["JAVA_HOME"],
+            ["-XX:TieredStopAtLevel=1"],
+        ),
+    ]
 ) -> None:
     """
     Main.
@@ -262,7 +288,8 @@ def main(
     :param n_itrs: the number of iterations to trigeer JIT
     :param seed: random seed used during generation
     """
-    args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed)
+
+    args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, javas)
     require_jattack_jar()
 
     try:
@@ -281,7 +308,8 @@ def main(
             gen_dir=args.gen_dir,
             output_dir=args.output_dir,
             jattack_jar=JATTACK_JAR,
-            build_dir=args.build_dir)
+            build_dir=args.build_dir,
+            javas=args.javas)
     except BailOutError as e:
         print_bail_out(e.msg)
     #yrt
