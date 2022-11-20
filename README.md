@@ -212,25 +212,32 @@ Examples of run commands:
             - java_env1.txt
   ```
 
-- Provide customized java environments under test using `--java_envs`.
+- Specify java environments and associated java options to be tested
+  using `--java_envs`.
 
   ```bash
   ./tool/jattack --clz T --n_gen 3 \
-      --java_envs [['/home/zzq/opt/jdk-11.0.15',['-XX:TieredStopAtLevel=4']],['/home/zzq/opt/jdk-17.0.3',['-XX:TieredStopAtLevel=1']]]
+      --java_envs "[\
+          [/home/zzq/opt/jdk-11.0.15,[-Xbatch,-Xcomp,-XX:-TieredCompilation]],\
+          [/home/zzq/opt/jdk-17.0.3,[-Xbatch,-Xcomp,-XX:TieredStopAtLevel=1]],\
+          [/home/zzq/opt/jdk-17.0.3,[]]]"
   ```
 
   This command generates 3 programs from template `T.java` and uses
   the 3 generated programs to test given java environments with given
   options, which are
-  - `/home/zzq/opt/jdk-11.0.15/bin/java -XX:TieredStopAtLevel=4`
-  - `/home/zzq/opt/jdk-17.0.3/bin/java -XX:TieredStopAtLevel=1`
+  - `/home/zzq/opt/jdk-11.0.15/bin/java -Xbatch -Xcomp -XX:-TieredCompilation`
+  - `/home/zzq/opt/jdk-17.0.3/bin/java -Xbatch -Xcomp -XX:TieredStopAtLevel=1`
+  - `/home/zzq/opt/jdk-17.0.3/bin/java`
 
 JAttack's command-line output is in [TAP](https://testanything.org/)
 format, so you can make it prettier using any TAP consumer, like
 [tapview](https://gitlab.com/esr/tapview):
 ```
 $ ./tool/jattack --clz T --n_gen 3 --seed 42 \
-    --java_envs [[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=4']],[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=1']]] \
+    --java_envs "[\
+        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=4]],\
+        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=1]]]" \
     | tapview
 F..
 not ok 1 - TGen1
@@ -276,7 +283,7 @@ Full list of arguments:
 
 ## Docs
 
-The following steps builds javadoc for JAttack jar. Please refer to
+The following steps build javadoc for JAttack jar. Please refer to
 class `Boom` for how to use provided APIs to write your own template.
 
 1. Build javadoc from source code.
@@ -290,12 +297,12 @@ class `Boom` for how to use provided APIs to write your own template.
 
 ## Hall of Fame
 
-Directory `bugs` contains all six JIT bugs found by JAttack, each of
-which contains a template program, a generated program and a minimized
-program to expose the bug.
+Directory `bugs` contains all six JIT bugs we found using JAttack,
+each of which contains a template program, a generated program and a
+minimized program to expose the bug.
 
-If you find bugs with JAttack, we would be happy to add them to this
-list. Please open a PR with a link to your bug.
+If you find JIT bugs using JAttack, we would be happy to add your
+findings to this list. Please open a PR with a link to your bug.
 
 - [JDK-8239244](https://bugs.openjdk.java.net/browse/JDK-8239244)
   (Login required): See
