@@ -166,6 +166,34 @@ Examples of run commands:
   `$JAVA_HOME` at level 4 and level 1, which are:
   - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=4`
   - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=1`
+  
+  After the run, a hidden directory `.jattack` is created under
+  current working directory as the following structure:
+  ```
+  .jattack
+      - logs # logs of runs
+        - 1668918602126595408.log
+      - T 
+        - build # Java class files
+          - T.class
+          - TGen1.class
+          - TGen2.class
+          - TGen3.class
+        - gen # Generated programs from the template
+          - TGen1.java
+          - TGen2.java
+          - TGen3.java
+        - output # Outputs of generated programs executed on different java environments
+          - TGen1
+            - java_env0.txt # Output from execution on java_envs[0]
+            - java_env1.txt # Output from execution on java_envs[1]
+          - TGen2
+            - java_env0.txt
+            - java_env1.txt
+          - TGen3
+            - java_env0.txt
+            - java_env1.txt
+  ```
 
 - Provide customized java environments under test.
 
