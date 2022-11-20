@@ -1,19 +1,23 @@
 #!/bin/bash
 
+readonly _DIR="$( cd -P "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
+
 set -e
 
 ### Build JAttack jar. Java >=11
 echo "Build JAttack jar..."
-pushd api >/dev/null
+pushd "${_DIR}"/api >/dev/null
 ./gradlew clean shadowJar
 popd >/dev/null
-cp api/build/libs/jattack-*-all.jar jattack-all.jar
+cp "${_DIR}"/api/build/libs/jattack-*-all.jar "${_DIR}"/jattack-all.jar
 
 ### Install python packages. Python 3.8
 echo "Install python packages..."
-pip install -r requirements.txt
+pip install -r "${_DIR}"/requirements.txt
 
 ### Create executable script.
-echo "#!/bin/bash" >jattack
-echo 'python jattack.py "$@"' >jattack
-chmod +x jattack
+exec="${_DIR}"/jattack
+echo "#!/bin/bash" >"$exec"
+echo 'readonly _DIR="$( cd -P "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"' >>"$exec"
+echo 'python ${_DIR}/jattack.py "$@"' >>"$exec"
+chmod +x "$exec"
