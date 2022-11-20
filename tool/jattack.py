@@ -145,9 +145,9 @@ def exceute_and_test(
                 f" {gen_clz} >{output_file} 2>/dev/null"
             )
             if res.returncode != 0:
+                logger.error(res.stderr)
                 crashed_jes.append(je)
             #fi
-            #t
         #rof
         if crashed_jes:
             # At least one java environment under test crashed
