@@ -158,7 +158,7 @@ Examples of run commands:
 - Provide only two required arguments `--clz` `--n_gen`.
 
   ```bash
-  ./tool/jattack --clz T.java --n_gen 3
+  ./tool/jattack --clz T --n_gen 3
   ```
 
   This command generates 3 programs from template `T.java` and uses
