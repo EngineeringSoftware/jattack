@@ -181,7 +181,7 @@ Examples of run commands:
   - `/home/zzq/opt/jdk-17.0.3/bin/java -XX:TieredStopAtLevel=1`
 
 Full list of arguments:
-```bash
+```
   -h, --help            Show this help message and exit.
 
   --clz CLZ             the fully qualified class name of the
