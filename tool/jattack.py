@@ -60,16 +60,14 @@ class Args:
             ) for java_env in java_envs
         ]
 
-        # Use the first java to compile and generate
+        # Use the first java environment to compile and run JAttack
+        # itself
         self.javac = self.java_envs[0].java_home / "bin" / "javac"
         self.java = self.java_envs[0].java_home / "bin" / "java"
         self.tmpl_dir = DOT_DIR / self.clz
         self.build_dir = self.tmpl_dir / "build"
         self.gen_dir = self.tmpl_dir / "gen"
         self.output_dir = self.tmpl_dir / "output"
-
-        # Make directories
-        su.io.mkdir(self.output_dir, parents=True)
 #ssalc
 
 def exceute_and_test(
@@ -96,8 +94,10 @@ def exceute_and_test(
     cp = str(jattack_jar) + os.pathsep + str(build_dir)
 
     # Execute every generated porgrams
-    for i, gen_src in enumerate(all_gen_paths):
-        test_number = i + 1
+    su.io.rm(output_dir)
+    su.io.mkdir(output_dir, parents=True)
+    for gen_i, gen_src in enumerate(all_gen_paths):
+        test_number = gen_i + 1
         gen_clz = pkg + "." + gen_src.stem if pkg else gen_src.stem
         output_dir_per_gen = output_dir / gen_clz
 
@@ -118,9 +118,52 @@ def exceute_and_test(
         #yrt
 
         # Execute on all Javas.
-        for java_env in java_envs:
-            bash_run(f"{java_env.java_home / 'bin' / 'java' } -version")
+        crashed_jes = []
+        for je_i, je in enumerate(java_envs):
+            java = je.java_home / "bin" / "java"
+            opts= " ".join(je.java_opts)
+            output_file = output_dir_per_gen / f"java_env{je_i}.txt"
+            res = bash_run(
+                f"{java} -cp {cp}"
+                f" {opts}"
+                f" -XX:ErrorFile={output_dir_per_gen}/he_err_pid%p.log"
+                f" -XX:ReplayDataFile={output_dir_per_gen}/replay_pid%p.log"
+                f" {gen_clz} >{output_file} 2>/dev/null"
+            )
+            if res.returncode != 0:
+                crashed_jes.append(je)
+            #fi
+            #t
+        #rof
+        if crashed_jes:
+            # At least one java environment under test crashed
+            print_not_ok(
+                test_number=test_number,
+                desc=gen_clz,
+                msg=f"crash at {crashed_jes}"
+            )
+            continue
+        #fi
 
+        # Compare results between every two java environments
+        for i1 in range(0, len(java_envs)):
+            for i2 in range(i1 + 1, len(java_envs)):
+                diff_file = output_dir_per_gen / f"{i1}-{i2}-diff.txt"
+                output_file1 = output_dir_per_gen / f"java_env{i1}.txt"
+                output_file2 = output_dir_per_gen / f"java_env{i2}.txt"
+                try:
+                    bash_run(f"diff {output_file1} {output_file2} >{diff_file}")
+                    # no diff, removing empty diff file
+                    su.io.rm(diff_file)
+                except BashError as e:
+                    # Diff
+                    print_not_ok(
+                        test_number=test_number,
+                        desc=gen_clz,
+                        msg=f"diff between {java_envs[i1]} and {java_envs[i2]}"
+                    )
+                #yrt
+            #rof
         #rof
 
         print_ok(test_number=test_number, desc=gen_clz)
@@ -259,7 +302,7 @@ def print_ok(test_number: str, desc: str) -> None:
 
 def bash_run(
     command: str,
-    check_returncode: int = 0,
+    check_returncode: int = None,
     timeout: int = None
 ) -> subprocess.CompletedProcess:
     """
@@ -268,8 +311,9 @@ def bash_run(
     logger.info(f"Bash: {command}")
     res = su.bash.run(command, check_returncode=check_returncode,
     timeout=timeout)
-    logger.info(res.stdout)
-    logger.error(res.stderr)
+    #logger.info(res.stdout)
+    #logger.error(res.stderr)
+    return res
 #fed
 
 def main(
@@ -295,11 +339,12 @@ def main(
     Main.
 
     :param clz: the fully qualified class name of the template,
-                separated with \".\"
+        separated with \".\"
     :param n_gen: the total number of generated programs
     :param src: the path to the source file of the template
     :param n_itrs: the number of iterations to trigeer JIT
-    :param seed: the random seed used during generation
+    :param seed: the random seed used by JAttack during generation,
+        fix this to reproduce a previous generation
     :param java_envs: the java environments to be differentially
         tested, which should be provided as a list of a tuple of java
         home string and a list of any java option strings, e.g., --java_envs=[
