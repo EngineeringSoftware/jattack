@@ -223,6 +223,15 @@ Examples of run commands:
           [/home/zzq/opt/jdk-17.0.3,[]]]"
   ```
 
+  The `java_envs` argument is a list, which can be also appended using
+  `--java_envs+=`, for example, the command above can be rewritten as:
+  ```bash
+  ./tool/jattack --clz T --n_gen 3 \
+      --java_envs [[/home/zzq/opt/jdk-11.0.15,[-Xbatch,-Xcomp,-XX:-TieredCompilation]]] \
+      --java_envs+=[[/home/zzq/opt/jdk-17.0.3,[-Xbatch,-Xcomp,-XX:TieredStopAtLevel=1]]] \
+      --java_envs+=[[/home/zzq/opt/jdk-17.0.3,[]]]
+  ```
+
   This command generates 3 programs from template `T.java` and uses
   the 3 generated programs to test given java environments with given
   options, which are
