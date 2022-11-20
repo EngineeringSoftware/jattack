@@ -270,8 +270,8 @@ Full list of arguments:
                         than or equal to the remaining ones. Also, the first java environment
                         is used to run JAttack itself, which means its version should be at
                         11. (type: List[Tuple[str, List[str]]], default:
-                        [('/home/zzq/opt/jdk-11.0.15', ['-XX:TieredStopAtLevel=4']),
-                        ('/home/zzq/opt/jdk-11.0.15', ['-XX:TieredStopAtLevel=1'])])
+                        [('$JAVA_HOME', ['-XX:TieredStopAtLevel=4']),
+                        ('$JAVA_HOME', ['-XX:TieredStopAtLevel=1'])])
 ```
 
 ## Docs
