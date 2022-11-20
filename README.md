@@ -25,7 +25,7 @@ random testing to detect critical bugs.
 ## Demo
 
 This demo reproduces a bug of OpenJDK jdk-11.0.8+10 C2 JIT compiler
-using template `T.java`. To reproduce, please run `./demo.sh`.
+using template `T.java`.
 
 1. Developers write a template program using JAttack's DSL fully
    embedded in Java, for example, `T.java`.
@@ -126,6 +126,23 @@ public class TGen1 {
 #
 ```
 
+To run the demo, please run `./demo.sh`. Sample output:
+```
+Download JDK...
+Build JAttack jar...
+Install python packages...
+See log file: /home/zzq/projects/jattack/.jattack/logs/1668918960458511253.log
+1..3
+[22:36:02E]su.__main__: bash: line 1: 1836850 Aborted                 (core dumped) /home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10/bin/java -cp /home/zzq/projects/jattack/tool/jattack-all.jar:/home/zzq/projects/jattack/.jattack/T/build -XX:TieredStopAtLevel=4 -XX:ErrorFile=/home/zzq/projects/jattack/.jattack/T/output/TGen1/he_err_pid%p.log -XX:ReplayDataFile=/home/zzq/projects/jattack/.jattack/T/output/TGen1/replay_pid%p.log TGen1 > /home/zzq/projects/jattack/.jattack/T/output/TGen1/java_env0.txt 2> /dev/null
+
+not ok 1 - TGen1
+  ---
+  message: 'crash at [JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])]'
+  ...
+ok 2 - TGen2
+ok 3 - TGen3
+```
+
 ## Requirements
 
 - Linux with GNU Bash (tested on Ubuntu 20.04)
@@ -207,6 +224,19 @@ Examples of run commands:
   options, which are
   - `/home/zzq/opt/jdk-11.0.15/bin/java -XX:TieredStopAtLevel=4`
   - `/home/zzq/opt/jdk-17.0.3/bin/java -XX:TieredStopAtLevel=1`
+
+JAttack's command-line output is in [TAP](https://testanything.org/)
+format, so you can make it prettier using any TAP consumer, like
+[webview](https://gitlab.com/esr/tapview):
+```
+$ ./tool/jattack --clz T --n_gen 3 --java_envs [[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=4']],[.jattack/downloads/jdk-11.0.8+10,['-XX:TieredStopAtLevel=1']]] --seed 42 | tapview
+F..
+not ok 1 - TGen1
+  ---
+  message: 'crash at [JavaEnv(java_home=PosixPath('.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])]'
+  ...
+3 tests, 1 failures.
+```
 
 Full list of arguments:
 ```

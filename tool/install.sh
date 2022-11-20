@@ -7,13 +7,13 @@ set -e
 ### Build JAttack jar. Java >=11
 echo "Build JAttack jar..."
 pushd "${_DIR}"/api >/dev/null
-./gradlew clean shadowJar
+./gradlew -q clean shadowJar
 popd >/dev/null
 cp "${_DIR}"/api/build/libs/jattack-*-all.jar "${_DIR}"/jattack-all.jar
 
 ### Install python packages. Python 3.8
 echo "Install python packages..."
-pip install -r "${_DIR}"/requirements.txt
+pip install -qr "${_DIR}"/requirements.txt
 
 ### Create executable script.
 exec="${_DIR}"/jattack
