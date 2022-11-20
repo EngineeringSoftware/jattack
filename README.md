@@ -18,7 +18,7 @@ random testing to detect critical bugs.
 3. [Install](#Install)
 4. [Use](#Use)
 5. [Docs](#Docs)
-6. [Hall of Fame](#Hall of Fame)
+6. [Hall of Fame](#Hall-of-Fame)
 7. [Citation](#Citation)
 8. [Contact](#Contact)
 
