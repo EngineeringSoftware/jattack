@@ -19,5 +19,5 @@ pip install -qr "${_DIR}"/requirements.txt
 exec="${_DIR}"/jattack
 echo "#!/bin/bash" >"$exec"
 echo 'readonly _DIR="$( cd -P "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"' >>"$exec"
-echo 'python ${_DIR}/jattack.py "$@"' >>"$exec"
+echo 'python3 ${_DIR}/jattack.py "$@"' >>"$exec"
 chmod +x "$exec"
