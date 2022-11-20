@@ -308,17 +308,18 @@ def main(
         fix this to reproduce a previous generation
     :param java_envs: the java environments to be differentially
         tested, which should be provided as a list of a tuple of java
-        home string and a list of any java option strings, e.g., --java_envs=[
-            /home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],
-            /home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]
-        ]
+        home string and a list of any java option strings, e.g.,
+        `--java_envs=[/home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],/home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]]`
         means we want to differentially test java 11 at level 4 and
         java 17 at level 1.
-        By default, $JAVA_HOME in the environment with level 4 and
-        level 1 will be used.
+        By default, $JAVA_HOME in the system environment with level 4
+        and level 1 will be used.
         Note, the first java environment of the list will be used to
-        compile the template and generated programs, and run JAttack
-        itself, which should be at least java 11.
+        compile the template and generated programs, which means the
+        version of the first java environment has to be less than or
+        equal to the remaining ones. Also, the first java environment
+        is used to run JAttack itself, which means its version should
+        be at least 11.
     """
 
     args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, java_envs)

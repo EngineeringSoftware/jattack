@@ -11,16 +11,29 @@ in, generating programs to later be run on compilers. JAttack blends
 the power of developers insights, who are providing templates, and
 random testing to detect critical bugs.
 
-## Use
+## Table of contents
+1. Requirements[#Requirements]
+2. Demo[#Demo]
+3. Install[#Install]
+4. Use[#Use]
+5. Docs[#Docs]
+6. Bugs[#Bugs]
+7. Citation[#Citation]
+8. Contact[#Contact]
 
-This demo shows how JAttack generates programs from a given template
-`T.java` and then executes the generated programs for differential
-testing of Java JIT compilers.
+## Requirements
 
-### Steps
+- Linux with GNU Bash (tested on Ubuntu 20.04)
+- JDK >=11
+- Python 3.8
 
-1. Write a template program using JAttack's DSL fully embedded in
-   Java, for example, `T.java`.
+## Demo
+
+This demo reproduces a bug of OpenJDK jdk-11.0.8+10 C2 JIT compiler
+using template `T.java`. To reproduce, please run `./demo.sh`.
+
+1. Developers write a template program using JAttack's DSL fully
+   embedded in Java, for example, `T.java`.
 
 ```java
 import jattack.annotation.Entry;
@@ -96,9 +109,9 @@ public class TGen1 {
 }
 ```
 
-3. Run the generated program(s) across Java JIT compilers. For
-   example, running the generated program `TGen1.java` crashes HotSpot
-   JIT in openjdk-11.0.8.
+3. JAttack runs every generated program across Java JIT compilers
+   under test. For example, running the generated program `TGen1.java`
+   crashes C2 in openjdk-11.0.8.
 
 ```
 #
@@ -118,34 +131,75 @@ public class TGen1 {
 #
 ```
 
-### Demo
-
-Requirements: Linux with GNU Bash (tested on Ubuntu 20.04)
-
-Usage: `./demo.sh <class name> <number of generated programs>`
-
-For example: `./demo.sh T 3`, which is also the default setting when
-no argument is specified.
+## Install
 
 ```bash
-$ ./demo.sh
-Download JDK...
-Build JAttack...
-Generate from T...
-3 programs are generated in /home/zzq/projects/jattack/.jattack/T/gen
-Executing TGen1...
-  At level4...
-./demo.sh: line 114: 432431 Aborted                 (core dumped) java -cp "${CP}" ${EXTRA_JAVA_FLAGS} ${STOP_AT_LEVEL}${level} ${gen_clz} ${n_exec_itrs} > "${output_file}" 2>&1
-ERROR: running TGen1 at level4. See /home/zzq/projects/jattack/.jattack/T/output/TGen1/TGen1-level4.txt
-  At level1...
-TGen1: level4 differs with level1!
-Executing TGen2...
-  At level4...
-  At level1...
-Executing TGen3...
-  At level4...
-  At level1...
-TGen1 failed! Potential JIT bugs!
+cd tool
+./install.sh
+```
+
+The `tool/install.sh` script will build JAttack jar, install python
+packages and create an executable `jattack` in `tools`.
+
+## Use
+
+```bash
+cd tool
+./jattack --clz <fully qualified class name of the template> --n_gen <number of generated programs> --java_envs <java environments under test>
+```
+
+Example of run commands of:
+
+```bash
+./tool/jattack --clz T.java --n_gen 3
+```
+
+This command generates 3 programs from template `T.java` and uses the
+3 generated programs to test default java environments, which is found
+in $JAVA_HOME, at level 4 and level 1.
+
+```bash
+./tool/jattack --clz T --n_gen 3 --java_envs [['/home/zzq/opt/jdk-11.0.15',['-XX:TieredStopAtLevel=4']],['/home/zzq/opt/jdk-17.0.3',['-XX:TieredStopAtLevel=1']]]
+```
+
+This command generates 3 programs from template `T.java` and uses the
+3 generated programs to test given java environments with given
+options:
+- `/home/zzq/opt/jdk-11.0.15/bin/java -XX:TieredStopAtLevel=4`
+- `/home/zzq/opt/jdk-17.0.3/bin/java -XX:TieredStopAtLevel=1`
+
+Full list of arguments:
+```bash
+  -h, --help            Show this help message and exit.
+
+  --clz CLZ             the fully qualified class name of the
+                        template, separated with "." (required, type:
+                        str)
+  --n_gen N_GEN         the total number of generated programs
+                        (required, type: int)
+  --src SRC             the path to the source file of the template
+                        (type: str, default: {clz}.java)
+  --n_itrs N_ITRS       the number of iterations to trigeer JIT (type:
+                        int, default: 100000)
+  --seed SEED           the random seed used by JAttack during
+                        generation, fix this to reproduce a previous
+                        generation (type: Union[int, null], default:
+                        null)
+  --java_envs JAVA_ENVS, --java_envs+ JAVA_ENVS
+                        the java environments to be differentially tested, which should be
+                        provided as a list of a tuple of java home string and a list of any
+                        java option strings, e.g., `--java_envs=[/home/zzq/opt/jdk-11.0.15,[-X
+                        X:TieredStopAtLevel=4],/home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel
+                        =1]]` means we want to differentially test java 11 at level 4 and java
+                        17 at level 1. By default, $JAVA_HOME in the system environment with
+                        level 4 and level 1 will be used. Note, the first java environment of
+                        the list will be used to compile the template and generated programs,
+                        which means the version of the first java environment has to be less
+                        than or equal to the remaining ones. Also, the first java environment
+                        is used to run JAttack itself, which means its version should be at
+                        11. (type: List[Tuple[str, List[str]]], default:
+                        [('/home/zzq/opt/jdk-11.0.15', ['-XX:TieredStopAtLevel=4']),
+                        ('/home/zzq/opt/jdk-11.0.15', ['-XX:TieredStopAtLevel=1'])])
 ```
 
 ## Docs
