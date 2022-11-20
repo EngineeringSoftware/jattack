@@ -313,7 +313,8 @@ def main(
     :param clz: the fully qualified class name of the template,
         separated with \".\"
     :param n_gen: the total number of generated programs
-    :param src: the path to the source file of the template, by default using `./{clz}.java`
+    :param src: the path to the source file of the template.
+        By default, `./{clz}.java` is used.
     :param n_itrs: the number of iterations to trigeer JIT
     :param seed: the random seed used by JAttack during generation,
         fix this to reproduce a previous generation.
@@ -330,7 +331,7 @@ def main(
         is used to run JAttack itself, which means its version should
         be at least 11.
         By default, $JAVA_HOME in the system with level 4 and level 1
-        will be used, i.e.,
+        is used, i.e.,
         `[$JAVA_HOME,[-XX:TieredStopAtLevel=4],$JAVA_HOME,[-XX:TieredStopAtLevel=1]]`
     """
 
