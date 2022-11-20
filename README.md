@@ -216,11 +216,8 @@ Full list of arguments:
 
 ## Docs
 
-### Requirements
-
-- JDK >=11
-
-### Steps
+The following steps builds javadoc for JAttack jar. Please refer to
+class `Boom` for how to use provided APIs to write your own template.
 
 1. Build javadoc from source code.
 ```bash
