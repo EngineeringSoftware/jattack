@@ -170,7 +170,7 @@ cd tool
     [--seed RANDOM_SEED]
 ```
 
-Examples of run commands:
+### Examples of Run Commands:
 
 - Provide only two required arguments `--clz` and `--n_gen`.
 
@@ -182,35 +182,7 @@ Examples of run commands:
   the 3 generated programs to test default java environments found in
   `$JAVA_HOME` at level 4 and level 1, which are:
   - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=4`
-  - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=1`
-  
-  After the run, a hidden directory `.jattack` is created under
-  current working directory as the following structure:
-  ```
-  .jattack
-      - logs # logs of runs
-        - 1668918602126595408.log
-      - T 
-        - build # Java class files
-          - T.class
-          - TGen1.class
-          - TGen2.class
-          - TGen3.class
-        - gen # Generated programs from the template
-          - TGen1.java
-          - TGen2.java
-          - TGen3.java
-        - output # Outputs of generated programs executed on different java environments
-          - TGen1
-            - java_env0.txt # Output from execution on java_envs[0]
-            - java_env1.txt # Output from execution on java_envs[1]
-          - TGen2
-            - java_env0.txt
-            - java_env1.txt
-          - TGen3
-            - java_env0.txt
-            - java_env1.txt
-  ```
+  - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=1`  
 
 - Specify java environments and associated java options to be tested
   using `--java_envs`.
@@ -232,6 +204,29 @@ Examples of run commands:
       --java_envs+=[[/home/zzq/opt/jdk-17.0.3,[]]]
   ```
 
+  The `java_envs` argument can also be given using a config file, i.e.,
+  ```bash
+  ./tool/jattack --config config.yaml --clz T --n_gen 3
+  ```
+  where `config.yaml` is:
+  ```yaml
+  # config.yaml
+  java_envs:
+    -
+      - /home/zzq/opt/jdk-11.0.15
+      - - -Xbatch
+        - -Xcomp
+        - -XX:-TieredCompilation
+    -
+      - /home/zzq/opt/jdk-17.0.3
+      - - -Xbatch
+        - -Xcomp
+        - -XX:TieredStopAtLevel=1
+    -
+      - /home/zzq/opt/jdk-17.0.3
+      - []
+  ```
+
   This command generates 3 programs from template `T.java` and uses
   the 3 generated programs to test given java environments with given
   options, which are
@@ -239,24 +234,7 @@ Examples of run commands:
   - `/home/zzq/opt/jdk-17.0.3/bin/java -Xbatch -Xcomp -XX:TieredStopAtLevel=1`
   - `/home/zzq/opt/jdk-17.0.3/bin/java`
 
-JAttack's command-line output is in [TAP](https://testanything.org/)
-format, so you can make it prettier using any TAP consumer, like
-[tapview](https://gitlab.com/esr/tapview):
-```
-$ ./tool/jattack --clz T --n_gen 3 --seed 42 \
-    --java_envs "[\
-        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=4]],\
-        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=1]]]" \
-    | tapview
-F..
-not ok 1 - TGen1
-  ---
-  message: 'crash at [JavaEnv(java_home=PosixPath('.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])]'
-  ...
-3 tests, 1 failures.
-```
-
-Full list of arguments:
+### Full List of Arguments:
 ```
   -h, --help            Show this help message and exit.
 
@@ -292,6 +270,53 @@ Full list of arguments:
                         used, i.e., `[$JAVA_HOME,[-XX:TieredStopAtLevel=4],$JAVA_HOME,[-XX:Tie
                         redStopAtLevel=1]]` (type: Union[List[Tuple[str, List[str]]], null],
                         default: null)
+```
+
+### Output
+
+JAttack's command-line output is in [TAP](https://testanything.org/)
+format, so you can make it prettier using any TAP consumer, like
+[tapview](https://gitlab.com/esr/tapview):
+```
+$ ./tool/jattack --clz T --n_gen 3 --seed 42 \
+    --java_envs "[\
+        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=4]],\
+        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=1]]]" \
+    | tapview
+F..
+not ok 1 - TGen1
+  ---
+  message: 'crash at [JavaEnv(java_home=PosixPath('.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])]'
+  ...
+3 tests, 1 failures.
+```
+
+After the run, a hidden directory `.jattack` is created under
+current working directory as the following structure:
+```
+.jattack
+    - logs # logs of runs
+      - 1668918602126595408.log
+    - T 
+      - build # Java class files
+        - T.class
+        - TGen1.class
+        - TGen2.class
+        - TGen3.class
+      - gen # Generated programs from the template
+        - TGen1.java
+        - TGen2.java
+        - TGen3.java
+      - output # Outputs of generated programs executed on different java environments
+        - TGen1
+          - java_env0.txt # Output from execution on java_envs[0]
+          - java_env1.txt # Output from execution on java_envs[1]
+        - TGen2
+          - java_env0.txt
+          - java_env1.txt
+        - TGen3
+          - java_env0.txt
+          - java_env1.txt
 ```
 
 ## Docs
