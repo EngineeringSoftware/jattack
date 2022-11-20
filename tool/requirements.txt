@@ -1,2 +1,3 @@
+jsonargparse==4.17.0
 natsort==8.2.0
 seutil==0.8.6
