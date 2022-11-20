@@ -43,14 +43,14 @@ class Args:
         self,
         clz: str,
         n_gen: int,
-        src: str,
+        src: Path,
         n_itrs: int,
         seed: int,
         java_envs: List[Tuple[str, List[str]]]
     ):
         self.clz = clz
         self.n_gen = n_gen
-        self.src = Path(src)
+        self.src = src
         self.n_itrs = n_itrs
         self.seed = seed
         self.java_envs = [
@@ -61,6 +61,12 @@ class Args:
         ]
 
         # Check all java environments are valid
+        if len(self.java_envs) < 2:
+            raise ValueError(
+                "Expected at least 2 java environments for "
+                "differential testing but found only "
+                f"{len(self.java_envs)}")
+        #fi
         for java_env in self.java_envs:
             if not (java_env.java_home / "bin" / "java").is_file():
                 raise ValueError(
@@ -239,7 +245,7 @@ def compile_template(src: Path, build_dir: Path, javac: Path) -> None:
              fails
     """
     if not src.is_file():
-        raise BailOutError(f"File not found: {src}")
+        raise BailOutError(f"Template source file not found: {src}")
     #fi
     try:
         su.io.mkdir(build_dir, parents=True)
@@ -297,7 +303,7 @@ def bash_run(
 def main(
     clz: str,
     n_gen: int,
-    src: str = "{clz}.java",
+    src: str = None,
     n_itrs: int = 100_000,
     seed: int = None,
     #  By default we use java in system path and compare level 4 and
@@ -319,7 +325,7 @@ def main(
     :param clz: the fully qualified class name of the template,
         separated with \".\"
     :param n_gen: the total number of generated programs
-    :param src: the path to the source file of the template
+    :param src: the path to the source file of the template, by default using `./{clz}.java`
     :param n_itrs: the number of iterations to trigeer JIT
     :param seed: the random seed used by JAttack during generation,
         fix this to reproduce a previous generation
@@ -339,7 +345,18 @@ def main(
         be at least 11.
     """
 
-    args = Args(clz, n_gen, f"{clz}.java", n_itrs, seed, java_envs)
+    if src is None:
+        src = CWD / f"{clz}.java"
+    else:
+        src = Path(src)
+    #fi
+    args = Args(
+        clz=clz,
+        n_gen=n_gen,
+        src=src,
+        n_itrs=n_itrs,
+        seed=seed,
+        java_envs=java_envs)
 
     try:
         compile_template(
