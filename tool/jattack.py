@@ -25,12 +25,12 @@ JATTACK_JAR = _DIR / "jattack-all.jar"
 # Set up logging
 su.io.mkdir(LOG_DIR, parents=True)
 log_file = Path(LOG_DIR / f"{time.time_ns()}.log")
-print("See log file:", log_file)
 su.log.setup(
     log_file=log_file,
     level_stderr=logging.WARNING,
     level_file=logging.DEBUG)
 logger = su.log.get_logger(__name__, level=logging.DEBUG)
+logger.info(f"See log file: {log_file}")
 
 class BailOutError(RuntimeError):
     def __init__(self, msg: str):
