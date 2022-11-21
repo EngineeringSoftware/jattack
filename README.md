@@ -183,7 +183,7 @@ cd tool
   the 3 generated programs to test default java environments found in
   `$JAVA_HOME` at level 4 and level 1, which are:
   - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=4`
-  - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=1`  
+  - `$JAVA_HOME/bin/java -XX:TieredStopAtLevel=1`
 
 - Specify java environments and associated java options to be tested
   using `--java_envs`.
@@ -299,7 +299,7 @@ current working directory as the following structure:
 .jattack
     - logs # logs of runs
       - 1668918602126595408.log
-    - T 
+    - T
       - build # Java class files
         - T.class
         - TGen1.class
@@ -313,6 +313,8 @@ current working directory as the following structure:
         - TGen1
           - java_env0.txt # Output from execution on java_envs[0]
           - java_env1.txt # Output from execution on java_envs[1]
+          - replay_pid2327972.log # replay data file of the crash
+          - he_err_pid2327972.log # error data file of the crash
         - TGen2
           - java_env0.txt
           - java_env1.txt
