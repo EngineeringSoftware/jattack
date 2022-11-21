@@ -178,7 +178,9 @@ def exceute_and_test(
 
         # Compile
         try:
-            bash_run(f"{javac} -cp {cp} {gen_src} -d {build_dir}")
+            bash_run(
+                f"{javac} -cp {cp} {gen_src} -d {build_dir}",
+                check_returncode=0)
         except BashError as e:
             logger.error(e)
             print_not_ok(
@@ -270,7 +272,8 @@ def generate(
             f" --srcPath={src}"
             f" --nInvocations={n_itrs}" +\
             (f" --seed={seed}" if seed else "") +\
-            f" --outputDir={gen_dir}")
+            f" --outputDir={gen_dir}",
+            check_returncode=0)
     except BashError as e:
         logger.error(e)
         raise BailOutError("Generating from template failed")
@@ -295,7 +298,9 @@ def compile_template(src: Path, build_dir: Path, javac: Path) -> None:
     #fi
     try:
         su.io.mkdir(build_dir, parents=True)
-        bash_run(f"{javac} -cp {JATTACK_JAR} {src} -d {build_dir}")
+        bash_run(
+            f"{javac} -cp {JATTACK_JAR} {src} -d {build_dir}",
+            check_returncode=0)
     except BashError as e:
         logger.error(e)
         raise BailOutError("Compiling template failed")
