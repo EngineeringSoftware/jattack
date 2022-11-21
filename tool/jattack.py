@@ -367,7 +367,7 @@ def main(
     :param n_gen: the total number of generated programs
     :param src: the path to the source file of the template.
         By default, `./{clz}.java` is used.
-    :param n_itrs: the number of iterations to trigeer JIT
+    :param n_itrs: the number of iterations to trigger JIT
     :param seed: the random seed used by JAttack during generation,
         fix this to reproduce a previous generation.
     :param java_envs: the java environments to be differentially

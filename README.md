@@ -252,7 +252,7 @@ cd tool
   --n_gen N_GEN         the total number of generated programs (required, type: int)
   --src SRC             the path to the source file of the template, by default using
                         `./{clz}.java` (type: Union[str, null], default: null)
-  --n_itrs N_ITRS       the number of iterations to trigeer JIT (type: int, default: 100000)
+  --n_itrs N_ITRS       the number of iterations to trigger JIT (type: int, default: 100000)
   --seed SEED           the random seed used by JAttack during generation, fix this to
                         reproduce a previous generation. (type: Union[int, null], default:
                         null)
