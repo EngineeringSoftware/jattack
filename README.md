@@ -137,7 +137,8 @@ See log file: /home/zzq/projects/jattack/.jattack/logs/1668918960458511253.log
 
 not ok 1 - TGen1
   ---
-  message: 'crash at [JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])]'
+  message: 'Found a potential crash bug'
+  data: CrashBugData(type=<BugType.CRASH: 'crash'>, crashed_java_envs=[JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])])
   ...
 ok 2 - TGen2
 ok 3 - TGen3
@@ -286,7 +287,8 @@ $ ./tool/jattack --clz T --n_gen 3 --seed 42 \
 F..
 not ok 1 - TGen1
   ---
-  message: 'crash at [JavaEnv(java_home=PosixPath('.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])]'
+  message: 'Found a potential crash bug'
+  data: CrashBugData(type=<BugType.CRASH: 'crash'>, crashed_java_envs=[JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])])
   ...
 3 tests, 1 failures.
 ```

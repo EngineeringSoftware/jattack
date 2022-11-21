@@ -5,6 +5,9 @@ import os
 import seutil as su
 import subprocess
 import time
+from collections import defaultdict
+from dataclasses import dataclass
+from enum import Enum
 from jsonargparse import CLI
 from natsort import natsorted
 from pathlib import Path
@@ -38,6 +41,48 @@ class BailOutError(RuntimeError):
 class JavaEnv(NamedTuple):
     java_home: Path
     java_opts: List[str]
+#ssalc
+
+class BugType(Enum):
+    """
+    Bug Type.
+    """
+    CRASH = "crash"
+    DIFF = "diff"
+#ssalc
+
+@dataclass
+class BugData():
+    """
+    Data of a bug.
+    """
+    type: BugType
+#ssalc
+
+@dataclass
+class CrashBugData(BugData):
+    """
+    Data of a crash bug.
+    """
+    crashed_java_envs: List[JavaEnv]
+
+    def __init__(self, crashed_java_envs: List[JavaEnv]):
+        self.crashed_java_envs = crashed_java_envs
+        self.type = BugType.CRASH
+    #fed
+#ssalc
+
+@dataclass
+class DiffBugData(BugData):
+    """
+    Data of a diff bug.
+    """
+    diff_groups: List[List[JavaEnv]]
+
+    def __init__(self, diff_groups: List[List[JavaEnv]]):
+        self.diff_groups = diff_groups
+        self.type = BugType.DIFF
+    #fed
 #ssalc
 
 class Args:
@@ -143,7 +188,7 @@ def exceute_and_test(
             continue
         #yrt
 
-        # Execute on all Javas.
+        # Execute on all java environments.
         crashed_jes = []
         for je_i, je in enumerate(java_envs):
             java = je.java_home / "bin" / "java"
@@ -166,31 +211,29 @@ def exceute_and_test(
             print_not_ok(
                 test_number=test_number,
                 desc=gen_clz,
-                msg=f"crash at {crashed_jes}"
+                msg=f"Found a potential crash bug",
+                data=CrashBugData(crashed_java_envs=crashed_jes)
             )
             continue
         #fi
 
-        # Compare results between every two java environments
-        for i1 in range(0, len(java_envs)):
-            for i2 in range(i1 + 1, len(java_envs)):
-                diff_file = output_dir_per_gen / f"{i1}-{i2}-diff.txt"
-                output_file1 = output_dir_per_gen / f"java_env{i1}.txt"
-                output_file2 = output_dir_per_gen / f"java_env{i2}.txt"
-                try:
-                    bash_run(f"diff {output_file1} {output_file2} >{diff_file}")
-                    # no diff, removing empty diff file
-                    su.io.rm(diff_file)
-                except BashError as e:
-                    # Diff
-                    print_not_ok(
-                        test_number=test_number,
-                        desc=gen_clz,
-                        msg=f"diff between {java_envs[i1]} and {java_envs[i2]}"
-                    )
-                #yrt
-            #rof
+        # Compare outputs from all java environments
+        jes_by_output = defaultdict(list)
+        for je_i, je in enumerate(java_envs):
+            with open(output_dir_per_gen / f"java_env{je_i}.txt") as output_file:
+                output = output_file.read()
+                jes_by_output[output].append(je)
+            #htiw
         #rof
+        if len(jes_by_output) > 1:
+            # Diff
+            print_not_ok(
+                test_number=test_number,
+                desc=gen_clz,
+                msg=f"Found a potential diff bug",
+                data=DiffBugData(diff_groups=list(jes_by_output.values()))
+            )
+        #fi
 
         print_ok(test_number=test_number, desc=gen_clz)
     #rof
@@ -272,13 +315,18 @@ def print_bail_out(msg: str) -> None:
     """
     print(f"Bail out! {msg}")
 
-def print_not_ok(test_number: int, desc: str, msg: str) -> None:
+def print_not_ok(
+    test_number: int,
+    desc: str,
+    msg: str,
+    data: BugData = None) -> None:
     """
     Print \"not ok\": test point as TAP format.
     """
     print(f"not ok {test_number} - {desc}")
     print("  ---")
     print(f"  message: '{msg}'")
+    print(f"  data: {data}")
     print("  ...")
 
 def print_ok(test_number: int, desc: str) -> None:
