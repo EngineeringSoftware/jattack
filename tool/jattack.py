@@ -23,7 +23,10 @@ JATTACK_JAR = _DIR / "jattack-all.jar"
 su.io.mkdir(LOG_DIR, parents=True)
 log_file = Path(LOG_DIR / f"{time.time_ns()}.log")
 print("See log file:", log_file)
-su.log.setup(log_file=log_file, level_stderr=logging.WARNING, level_file=logging.DEBUG)
+su.log.setup(
+    log_file=log_file,
+    level_stderr=logging.WARNING,
+    level_file=logging.DEBUG)
 logger = su.log.get_logger(__name__, level=logging.DEBUG)
 
 class BailOutError(RuntimeError):
@@ -102,7 +105,8 @@ def exceute_and_test(
     java_envs: List[JavaEnv]
 ) -> None:
     """
-    Execute every generated program on different JIT compilers and       perform differential testing over results.
+    Execute every generated program on different JIT compilers and
+    perform differential testing over results.
 
     :raises: BailOutError if something is wrong
     """
