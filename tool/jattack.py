@@ -272,7 +272,7 @@ def print_bail_out(msg: str) -> None:
     """
     print(f"Bail out! {msg}")
 
-def print_not_ok(test_number: str, desc: str, msg: str) -> None:
+def print_not_ok(test_number: int, desc: str, msg: str) -> None:
     """
     Print \"not ok\": test point as TAP format.
     """
@@ -281,7 +281,7 @@ def print_not_ok(test_number: str, desc: str, msg: str) -> None:
     print(f"  message: '{msg}'")
     print("  ...")
 
-def print_ok(test_number: str, desc: str) -> None:
+def print_ok(test_number: int, desc: str) -> None:
     """
     Print \"ok\" test point  as TAP format.
     """

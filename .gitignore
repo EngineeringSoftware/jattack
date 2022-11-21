@@ -7,10 +7,13 @@
 out/
 *.iml
 
+# VS Code
+.vscode/
+
 # Java
 *.class
 *.jar
 
 # Scripts
 *.log
-.jattack
+.jattack/
