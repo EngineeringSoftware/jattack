@@ -132,12 +132,12 @@ Download JDK...
 Build JAttack jar...
 Install python packages...
 1..3
-[22:36:02E]su.__main__: bash: line 1: 1836850 Aborted                 (core dumped) /home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10/bin/java -cp /home/zzq/projects/jattack/tool/jattack-all.jar:/home/zzq/projects/jattack/.jattack/T/build -XX:TieredStopAtLevel=4 -XX:ErrorFile=/home/zzq/projects/jattack/.jattack/T/output/TGen1/he_err_pid%p.log -XX:ReplayDataFile=/home/zzq/projects/jattack/.jattack/T/output/TGen1/replay_pid%p.log TGen1 > /home/zzq/projects/jattack/.jattack/T/output/TGen1/java_env0.txt 2> /dev/null
+[10:28:28E]su.__main__: bash: line 1: 2414756 Aborted                 (core dumped) /home/zzq/projects/jattack/.downloads/jdk-11.0.8+10/bin/java -cp /home/zzq/projects/jattack/tool/jattack-all.jar:/home/zzq/projects/jattack/.jattack/T/build -XX:TieredStopAtLevel=4 -XX:ErrorFile=/home/zzq/projects/jattack/.jattack/T/output/TGen1/he_err_pid%p.log -XX:ReplayDataFile=/home/zzq/projects/jattack/.jattack/T/output/TGen1/replay_pid%p.log TGen1 > /home/zzq/projects/jattack/.jattack/T/output/TGen1/java_env0.txt 2> /dev/null
 
 not ok 1 - TGen1
   ---
   message: 'Found a potential crash bug'
-  data: CrashBugData(type=<BugType.CRASH: 'crash'>, crashed_java_envs=[JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])])
+  data: CrashBugData(type=<BugType.CRASH: 'crash'>, crashed_java_envs=[JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])])
   ...
 ok 2 - TGen2
 ok 3 - TGen3
@@ -234,7 +234,7 @@ cd tool
   - `/home/zzq/opt/jdk-17.0.3/bin/java -Xbatch -Xcomp -XX:TieredStopAtLevel=1`
   - `/home/zzq/opt/jdk-17.0.3/bin/java`
 
-### Full List of Arguments:
+### Full List of Arguments
 ```
   -h, --help            Show this help message and exit.
 
@@ -280,14 +280,14 @@ format, so you can make it prettier using any TAP consumer, like
 ```
 $ ./tool/jattack --clz T --n_gen 3 --seed 42 \
     --java_envs "[\
-        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=4]],\
-        [.jattack/downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=1]]]" \
+        [.downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=4]],\
+        [.downloads/jdk-11.0.8+10,[-XX:TieredStopAtLevel=1]]]" \
     | tapview
 F..
 not ok 1 - TGen1
   ---
   message: 'Found a potential crash bug'
-  data: CrashBugData(type=<BugType.CRASH: 'crash'>, crashed_java_envs=[JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.jattack/downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])])
+  data: CrashBugData(type=<BugType.CRASH: 'crash'>, crashed_java_envs=[JavaEnv(java_home=PosixPath('/home/zzq/projects/jattack/.downloads/jdk-11.0.8+10'), java_opts=['-XX:TieredStopAtLevel=4'])])
   ...
 3 tests, 1 failures.
 ```

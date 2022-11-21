@@ -3,7 +3,7 @@
 readonly _DIR="$( cd -P "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
 
 # Download a buggy jdk to reproduce a bug.
-readonly DL_DIR="${_DIR}/.jattack/downloads"
+readonly DL_DIR="${_DIR}/.downloads"
 mkdir -p "${DL_DIR}"
 readonly JDK_DIR="${DL_DIR}/jdk-11.0.8+10"
 if [[ ! -f ${JDK_DIR}/bin/java || ! -f ${JDK_DIR}/bin/javac ]]; then
