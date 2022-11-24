@@ -42,7 +42,7 @@ public class ByteBufferUtil {
 
     public static ByteBuffer toByteBuffer(float val) {
         // Treat all NaN the same as the canonical one
-        if (Double.isNaN(val)) {
+        if (Float.isNaN(val)) {
             val = Float.NaN;
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate(4);

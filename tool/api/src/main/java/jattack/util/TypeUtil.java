@@ -19,6 +19,33 @@ import java.util.Set;
  */
 public class TypeUtil {
 
+    public static int compare(Number n1, Number n2) {
+        if (n1.getClass() != n2.getClass()) {
+            throw new IllegalArgumentException(
+                    "Cannot compare two different types: " +
+                            n1.getClass() + " and " + n2.getClass());
+        }
+        Class<?> type = n1.getClass();
+        // TODO: there should be some approach to simplify the
+        //  comparison
+        if (Integer.class.equals(type)) {
+            return Integer.compare((Integer) n1, (Integer) n2);
+        } else if (Long.class.equals(type)) {
+            return Long.compare((Long) n1, (Long) n2);
+        } else if (Float.class.equals(type)) {
+            return Float.compare((Float) n1, (Float) n2);
+        } else if (Double.class.equals(type)) {
+            return Double.compare((Double) n1, (Double) n2);
+        } else if (Byte.class.equals(type)) {
+            return Double.compare((Byte) n1, (Byte) n2);
+        } else if (Short.class.equals(type)) {
+            return Short.compare((Short) n1, (Short) n2);
+        } else {
+            throw new RuntimeException(
+                    "Unexpected type for comparison: " + type);
+        }
+    }
+
     public static void setStaticFieldToDefaultValue(Field f) {
         try {
             setStaticFieldToDefaultValue0(f);

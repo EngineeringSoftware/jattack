@@ -107,6 +107,20 @@ public class Cli {
             Config.nInvocations = Integer.parseInt(value);
             break;
         }
+        case "bytes": {
+            Config.bytes = new LinkedList<>();
+            for (String s : readArgAsArray(value, "+")) {
+                Config.bytes.add(Byte.parseByte(s));
+            }
+            break;
+        }
+        case "shorts": {
+            Config.shorts = new LinkedList<>();
+            for (String s : readArgAsArray(value, "+")) {
+                Config.shorts.add(Short.parseShort(s));
+            }
+            break;
+        }
         case "ints": {
             Config.ints = new LinkedList<>();
             for (String s : readArgAsArray(value, "+")) {
@@ -118,6 +132,13 @@ public class Cli {
             Config.longs = new LinkedList<>();
             for (String s : readArgAsArray(value, "+")) {
                 Config.longs.add(Long.parseLong(s));
+            }
+            break;
+        }
+        case "floats": {
+            Config.floats = new LinkedList<>();
+            for (String s : readArgAsArray(value, "+")) {
+                Config.floats.add(Float.parseFloat(s));
             }
             break;
         }

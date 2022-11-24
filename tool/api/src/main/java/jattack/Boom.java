@@ -3,6 +3,9 @@ package jattack;
 import jattack.ast.exp.AltExp;
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.BAriExp;
+import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CharVal;
+import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LHSExp;
 import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
@@ -22,6 +25,7 @@ import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
 import jattack.ast.exp.RelExp;
+import jattack.ast.exp.ShortVal;
 import jattack.ast.operator.AriOp;
 import jattack.ast.operator.AriOrShiftOp;
 import jattack.ast.operator.ShiftOp;
@@ -313,12 +317,43 @@ public final class Boom {
     }
 
     /**
-     * An double variable given a range of choices by variable name.
+     * A char variable given a range of choices by variable name.
+     */
+    public static RefId<Character> charId(String... ids) {
+        return refId(Character.class, ids);
+    }
+
+    /**
+     * A short variable given a range of choices by variable name.
+     */
+    public static RefId<Short> shortId(String... ids) {
+        return refId(Short.class, ids);
+    }
+
+    /**
+     * A byte variable given a range of choices by variable name.
+     */
+    public static RefId<Byte> byteId(String... ids) {
+        return refId(Byte.class, ids);
+    }
+
+    /**
+     * A float variable given a range of choices by variable name.
+     */
+    public static RefId<Float> floatId(String... ids) {
+        return refId(Float.class, ids);
+    }
+
+    /**
+     * A double variable given a range of choices by variable name.
      */
     public static DoubleId doubleId(String... ids) {
         return new DoubleId(Arrays.asList(ids));
     }
 
+    /**
+     * A long variable given a range of choices by variable name.
+     */
     public static RefId<Long> longId(String... ids) {
         return refId(Long.class, ids);
     }
@@ -570,14 +605,63 @@ public final class Boom {
     /*------------------------- Numbers ----------------------------*/
 
     /**
-     * A free bool number.
+     * A free {@link boolean} literal.
      */
     public static BoolVal boolVal() {
         return new BoolVal();
     }
 
     /**
-     * A free integer number.
+     * A free {@link char} literal.
+     */
+    public static CharVal charVal() {
+        if (Config.ss == SearchStrategy.RANDOM) {
+            return new CharVal();
+        } else {
+            return new CharVal(Config.chars);
+        }
+    }
+
+    /**
+     * A free {@link byte} literal.
+     */
+    public static ByteVal byteVal() {
+        if (Config.ss == SearchStrategy.RANDOM) {
+            return new ByteVal();
+        } else {
+            return new ByteVal(Config.bytes);
+        }
+    }
+
+    /**
+     * An {@link byte} literal between {@code low} (inclusive) and
+     * {@code high} (exclusive), where {@literal low < high}.
+     */
+    public static ByteVal byteVal(byte low, byte high) {
+        return new ByteVal(low, high);
+    }
+
+    /**
+     * A free {@link short} literal.
+     */
+    public static ShortVal shortVal() {
+        if (Config.ss == SearchStrategy.RANDOM) {
+            return new ShortVal();
+        } else {
+            return new ShortVal(Config.shorts);
+        }
+    }
+
+    /**
+     * An {@link short} literal between {@code low} (inclusive) and
+     * {@code high} (exclusive), where {@literal low < high}.
+     */
+    public static ShortVal shortVal(short low, short high) {
+        return new ShortVal(low, high);
+    }
+
+    /**
+     * A free {@link int} literal.
      */
     public static IntVal intVal() {
         if (Config.ss == SearchStrategy.RANDOM) {
@@ -588,7 +672,7 @@ public final class Boom {
     }
 
     /**
-     * An integer number between {@code low} (inclusive) and
+     * An {@link int} literal between {@code low} (inclusive) and
      * {@code high} (exclusive), where {@literal low < high}.
      */
     public static IntVal intVal(int low, int high) {
@@ -596,7 +680,7 @@ public final class Boom {
     }
 
     /**
-     * A free long integer number.
+     * A free {@link long} literal.
      */
     public static LongVal longVal() {
         if (Config.ss == SearchStrategy.RANDOM) {
@@ -607,7 +691,7 @@ public final class Boom {
     }
 
     /**
-     * A long integer number between {@code low} (inclusive) and
+     * A {@link long} literal between {@code low} (inclusive) and
      * {@code high} (exclusive), where {@literal low < high}.
      */
     public static LongVal longVal(long low, long high) {
@@ -615,7 +699,27 @@ public final class Boom {
     }
 
     /**
-     * A free double number between -Double.MAX_VALUE and
+     * A free {@link float} literal between -Float.MAX_VALUE and
+     * Float.MAX_VALUE.
+     */
+    public static FloatVal floatVal() {
+        if (Config.ss == SearchStrategy.RANDOM) {
+            return new FloatVal();
+        } else {
+            return new FloatVal(Config.floats);
+        }
+    }
+
+    /**
+     * A @link float} between {@code low} (inclusive) and
+     * {@code high} (exclusive), where {@literal low < high}.
+     */
+    public static FloatVal floatVal(float low, float high) {
+        return new FloatVal(low, high);
+    }
+
+    /**
+     * A free {@link double} literal between -Double.MAX_VALUE and
      * Double.MAX_VALUE.
      */
     public static DoubleVal doubleVal() {
@@ -627,7 +731,7 @@ public final class Boom {
     }
 
     /**
-     * An double number between {@code low} (inclusive) and
+     * A @link double} between {@code low} (inclusive) and
      * {@code high} (exclusive), where {@literal low < high}.
      */
     public static DoubleVal doubleVal(double low, double high) {
@@ -635,14 +739,14 @@ public final class Boom {
     }
 
     /**
-     * An immutable integer number node.
+     * An immutable {@link int} literal.
      */
     public static ImIntVal asInt(int val) {
         return new ImIntVal(val);
     }
 
     /**
-     * An immutable bool number.
+     * An immutable {@link boolean} literal.
      */
     public static ImBoolVal asBool(boolean val) {
         return new ImBoolVal(val);

@@ -2,6 +2,9 @@ package jattack.ast.visitor;
 
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.BAriExp;
+import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CharVal;
+import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
@@ -19,6 +22,7 @@ import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
 import jattack.ast.exp.RelExp;
+import jattack.ast.exp.ShortVal;
 import jattack.ast.nodetypes.TerminalNode;
 import jattack.ast.stmt.BlockStmt;
 import jattack.ast.stmt.ExprStmt;
@@ -61,17 +65,27 @@ public class PrintVisitor extends Visitor {
     }
 
     @Override
-    public void endVisit(BoolId node) {
-        endVisitTerminalNode(node);
-    }
-
-    @Override
     public void endVisit(BoolVal node) {
         endVisitTerminalNode(node);
     }
 
     @Override
     public void endVisit(ImBoolVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(CharVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(ByteVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(ShortVal node) {
         endVisitTerminalNode(node);
     }
 
@@ -86,12 +100,12 @@ public class PrintVisitor extends Visitor {
     }
 
     @Override
-    public void endVisit(IntId node) {
+    public void endVisit(LongVal node) {
         endVisitTerminalNode(node);
     }
 
     @Override
-    public void endVisit(DoubleId node) {
+    public void endVisit(FloatVal node) {
         endVisitTerminalNode(node);
     }
 
@@ -105,8 +119,19 @@ public class PrintVisitor extends Visitor {
         endVisitTerminalNode(node);
     }
 
+
     @Override
-    public void endVisit(LongVal node) {
+    public void endVisit(BoolId node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(IntId node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(DoubleId node) {
         endVisitTerminalNode(node);
     }
 

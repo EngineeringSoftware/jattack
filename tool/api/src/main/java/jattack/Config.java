@@ -1,5 +1,6 @@
 package jattack;
 
+import jattack.ast.exp.FloatVal;
 import jattack.driver.SearchStrategy;
 
 import java.util.Arrays;
@@ -34,6 +35,27 @@ public class Config {
     public static int nInvocations = 100000;
 
     /**
+     * The char space that will be explored, enabled if in
+     * systematic style.
+     */
+    public static List<Character> chars = Arrays.asList(
+            'a', Character.MAX_VALUE, Character.MIN_VALUE);
+
+    /**
+     * The byte space that will be explored, enabled if in
+     * systematic style.
+     */
+    public static List<Byte> bytes = Arrays.asList(
+            (byte) 0, (byte) 1, (byte) -1, Byte.MAX_VALUE, Byte.MIN_VALUE);
+
+    /**
+     * The short space that will be explored, enabled if in
+     * systematic style.
+     */
+    public static List<Short> shorts = Arrays.asList(
+            (short) 0, (short) 1, (short) -1, Short.MAX_VALUE, Short.MIN_VALUE);
+
+    /**
      * The integer space that will be explored, enabled if in
      * systematic style.
      */
@@ -46,6 +68,14 @@ public class Config {
      */
     public static List<Long> longs = Arrays.asList(
             0L, 1L, -1L, Long.MAX_VALUE, Long.MIN_VALUE);
+
+    /**
+     * The float space that will be explored, enabled if in
+     * systematic style.
+     */
+    public static List<Float> floats = Arrays.asList(
+            0.0F, 1.0F, -1.0F, Float.MAX_VALUE, Float.MIN_VALUE);
+    // Do you know Float.MIN_VALUE is positive :)
 
     /**
      * The double space that will be explored, enabled if in

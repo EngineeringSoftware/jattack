@@ -10,6 +10,7 @@ import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
 import jattack.Constants;
 import jattack.data.Data;
+import jattack.log.Log;
 import jattack.util.JPUtil;
 
 /**

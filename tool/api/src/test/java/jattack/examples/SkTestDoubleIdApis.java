@@ -1,6 +1,8 @@
 package jattack.examples;
 
 import jattack.annotation.Entry;
+import jattack.exception.InvokedFromNotDriverException;
+
 import static jattack.Boom.*;
 
 public class SkTestDoubleIdApis {
@@ -12,7 +14,7 @@ public class SkTestDoubleIdApis {
         double x = 1.0;
         double y = 5.0;
         if (relation(doubleId("x"), doubleId("x"), LT).eval()) {
-            s1 += doubleId().eval();
+            throw new InvokedFromNotDriverException();
         } else {
             s1 += doubleId().eval();
         }

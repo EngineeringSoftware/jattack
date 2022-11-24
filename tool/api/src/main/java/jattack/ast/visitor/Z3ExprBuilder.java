@@ -7,6 +7,9 @@ import com.microsoft.z3.FPSort;
 import com.microsoft.z3.Sort;
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.BAriExp;
+import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CharVal;
+import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
@@ -23,6 +26,7 @@ import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
 import jattack.ast.exp.RelExp;
+import jattack.ast.exp.ShortVal;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -104,7 +108,7 @@ public class Z3ExprBuilder extends Visitor {
     public void endVisit(RefId<?> node) {
         // Skip float point numbers because for example,
         // x == x is not always true when x is NaN.
-        Class<?> type = node.getIdType();
+        Class<?> type = node.getType();
         if (type.equals(double[].class)
                 || type.equals(Double.class)
                 || type.equals(float[].class)
@@ -178,6 +182,37 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
+    public boolean visit(CharVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(CharVal node) {
+        // TODO: I guess we cannot encode a char in Z3?
+        buildable = false;
+    }
+
+    @Override
+    public boolean visit(ByteVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ByteVal node) {
+        stack.push(ctx.mkInt(node.getVal()));
+    }
+
+    @Override
+    public boolean visit(ShortVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ShortVal node) {
+        stack.push(ctx.mkInt(node.getVal()));
+    }
+
+    @Override
     public boolean visit(IntVal node) {
         return buildable;
     }
@@ -214,6 +249,18 @@ public class Z3ExprBuilder extends Visitor {
 
     @Override
     public void endVisit(DoubleId node) {
+        // Skip float point numbers because for example,
+        // x == x is not always true when x is NaN.
+        buildable = false;
+    }
+
+    @Override
+    public boolean visit(FloatVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(FloatVal node) {
         // Skip float point numbers because for example,
         // x == x is not always true when x is NaN.
         buildable = false;

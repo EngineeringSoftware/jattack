@@ -18,7 +18,7 @@ public class BoolId extends IdExp<Boolean> {
     }
 
     @Override
-    public Class<?> getIdType() {
+    public Class<Boolean> getType() {
         return Boolean.class;
     }
 

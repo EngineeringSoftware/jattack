@@ -18,7 +18,7 @@ public class IntId extends IdExp<Integer> {
     }
 
     @Override
-    public Class<?> getIdType() {
+    public Class<Integer> getType() {
         return Integer.class;
     }
 

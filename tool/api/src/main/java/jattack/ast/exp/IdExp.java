@@ -2,6 +2,7 @@ package jattack.ast.exp;
 
 import jattack.ast.exp.iterator.LitItr;
 import jattack.ast.nodetypes.NodeWithSideEffect;
+import jattack.ast.nodetypes.NodeWithType;
 import jattack.ast.nodetypes.TerminalNode;
 import jattack.data.Data;
 import jattack.driver.Driver;
@@ -11,8 +12,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * A base class for all identifier expressions.
+ */
 public abstract class IdExp<T> extends LHSExp<T>
-        implements NodeWithSideEffect<T>, TerminalNode<T> {
+        implements NodeWithSideEffect<T>, TerminalNode<T>, NodeWithType<T> {
 
     private UniqueList<String> ids;
 
@@ -71,12 +75,10 @@ public abstract class IdExp<T> extends LHSExp<T>
         return !ids().isEmpty();
     }
 
-    public abstract Class<?> getIdType();
-
     private UniqueList<String> ids() {
         if (ids == null) {
             // infer identifiers
-            Set<String> availableIds = Data.getVarsOfType(getIdType());
+            Set<String> availableIds = Data.getVarsOfType(getType());
             for (String id : excludedIds) {
                 availableIds.remove(id);
             }

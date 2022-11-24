@@ -18,7 +18,7 @@ public class RefId<T> extends IdExp<T> {
     }
 
     @Override
-    public Class<?> getIdType() {
+    public Class<T> getType() {
         return type;
     }
 

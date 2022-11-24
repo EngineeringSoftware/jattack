@@ -1,6 +1,5 @@
 package jattack.ast.exp;
 
-import jattack.ast.nodetypes.TerminalNode;
 import jattack.ast.exp.iterator.LitItr;
 import jattack.ast.visitor.Visitor;
 import jattack.driver.Driver;
@@ -9,26 +8,17 @@ import jattack.util.UniqueList;
 /**
  * Boolean literal expression.
  */
-public class BoolVal extends Exp<Boolean> implements TerminalNode<Boolean> {
+public class BoolVal extends LitExp<Boolean> {
 
     private final UniqueList<Boolean> vals;
 
-    private boolean val;
-
+    /**
+     * Constructor for both random and systematic exploration.
+     */
     public BoolVal() {
         this.vals = new UniqueList<>();
         vals.add(false);
         vals.add(true);
-    }
-
-    @Override
-    public Boolean getVal() {
-        return val;
-    }
-
-    @Override
-    public String asStr() {
-        return String.valueOf(val);
     }
 
     @Override
@@ -45,11 +35,6 @@ public class BoolVal extends Exp<Boolean> implements TerminalNode<Boolean> {
     @Override
     public void stepRand() {
         val = Driver.rand.nextBoolean();
-    }
-
-    @Override
-    public boolean hasRandChoice() {
-        return true;
     }
 
     @Override

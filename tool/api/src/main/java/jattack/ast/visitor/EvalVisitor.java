@@ -1,7 +1,10 @@
 package jattack.ast.visitor;
 
 import jattack.ast.exp.AssignExp;
+import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CharVal;
 import jattack.ast.exp.Exp;
+import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
@@ -13,6 +16,7 @@ import jattack.ast.exp.ImBoolVal;
 import jattack.ast.exp.ImDoubleVal;
 import jattack.ast.exp.IntArrVal;
 import jattack.ast.exp.RefArrAccessExp;
+import jattack.ast.exp.ShortVal;
 import jattack.ast.operator.OpNode;
 import jattack.ast.nodetypes.TerminalNode;
 import jattack.ast.operator.AriOp;
@@ -115,6 +119,19 @@ public class EvalVisitor extends Visitor {
     }
 
     @Override
+    public void endVisit(CharVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    public void endVisit(ByteVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    public void endVisit(ShortVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(IntVal node) {
         endVisitTerminalNode(node);
     }
@@ -126,6 +143,11 @@ public class EvalVisitor extends Visitor {
 
     @Override
     public void endVisit(IntId node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(FloatVal node) {
         endVisitTerminalNode(node);
     }
 

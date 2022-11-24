@@ -18,7 +18,7 @@ public class DoubleId extends IdExp<Double> {
     }
 
     @Override
-    public Class<?> getIdType() {
+    public Class<Double> getType() {
         return Double.class;
     }
 
