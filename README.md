@@ -338,7 +338,7 @@ class `Boom` for how to use provided APIs to write your own template.
 
 ## Hall of Fame
 
-Directory `bugs` contains all six JIT bugs we found using JAttack,
+Directory `bugs` contains all the JIT bugs we found using JAttack,
 each of which contains a template program, a generated program and a
 minimized program to expose the bug.
 
