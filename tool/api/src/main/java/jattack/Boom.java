@@ -11,16 +11,13 @@ import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
 import jattack.ast.exp.ShiftExp;
-import jattack.ast.exp.BoolId;
 import jattack.ast.exp.BoolVal;
-import jattack.ast.exp.DoubleId;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.Exp;
 import jattack.ast.exp.ImBoolVal;
 import jattack.ast.exp.ImDoubleVal;
 import jattack.ast.exp.ImIntVal;
 import jattack.ast.exp.IntArrVal;
-import jattack.ast.exp.IntId;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
@@ -312,8 +309,8 @@ public final class Boom {
     /**
      * A boolean variable given a range of choices by variable name.
      */
-    public static BoolId boolId(String... ids) {
-        return new BoolId(Arrays.asList(ids));
+    public static RefId<Boolean> boolId(String... ids) {
+        return refId(Boolean.class, ids);
     }
 
     /**
@@ -347,8 +344,8 @@ public final class Boom {
     /**
      * A double variable given a range of choices by variable name.
      */
-    public static DoubleId doubleId(String... ids) {
-        return new DoubleId(Arrays.asList(ids));
+    public static RefId<Double> doubleId(String... ids) {
+        return refId(Double.class, ids);
     }
 
     /**
@@ -361,15 +358,15 @@ public final class Boom {
     /**
      * An int variable given a range of choices by variable name.
      */
-    public static IntId intId(String... ids) {
+    public static RefId<Integer> intId(String... ids) {
         return intId(false, ids);
     }
 
     /**
      * An int variable given a range of choices by variable name.
      */
-    public static IntId intId(boolean exclude, String... ids) {
-        return new IntId(exclude, Arrays.asList(ids));
+    public static RefId<Integer> intId(boolean exclude, String... ids) {
+        return refId(Integer.class, exclude, ids);
     }
 
     public static <T> RefId<T> refId(Class<T> type, String... ids) {
@@ -884,7 +881,7 @@ public final class Boom {
      * of excluded choices.
      */
     public static Exp<Integer> intIdOrIntArrAccessExp(boolean exclude, String... ids) {
-        return alt(new IntId(exclude, Arrays.asList(ids)), intArrAccessExp());
+        return alt(intId(exclude, ids), intArrAccessExp());
     }
 
     /*-------------------- Increment/decrement -------------------*/

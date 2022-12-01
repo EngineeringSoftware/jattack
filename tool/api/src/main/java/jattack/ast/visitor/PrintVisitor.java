@@ -9,15 +9,12 @@ import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
 import jattack.ast.exp.ShiftExp;
-import jattack.ast.exp.BoolId;
 import jattack.ast.exp.BoolVal;
-import jattack.ast.exp.DoubleId;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.ImBoolVal;
 import jattack.ast.exp.ImDoubleVal;
 import jattack.ast.exp.ImIntVal;
 import jattack.ast.exp.IntArrVal;
-import jattack.ast.exp.IntId;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
@@ -116,22 +113,6 @@ public class PrintVisitor extends Visitor {
 
     @Override
     public void endVisit(ImDoubleVal node) {
-        endVisitTerminalNode(node);
-    }
-
-
-    @Override
-    public void endVisit(BoolId node) {
-        endVisitTerminalNode(node);
-    }
-
-    @Override
-    public void endVisit(IntId node) {
-        endVisitTerminalNode(node);
-    }
-
-    @Override
-    public void endVisit(DoubleId node) {
         endVisitTerminalNode(node);
     }
 

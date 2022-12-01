@@ -9,9 +9,7 @@ import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
 import jattack.ast.exp.ShiftExp;
-import jattack.ast.exp.DoubleId;
 import jattack.ast.exp.DoubleVal;
-import jattack.ast.exp.BoolId;
 import jattack.ast.exp.ImBoolVal;
 import jattack.ast.exp.ImDoubleVal;
 import jattack.ast.exp.IntArrVal;
@@ -23,7 +21,6 @@ import jattack.ast.operator.AriOp;
 import jattack.ast.exp.BAriExp;
 import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.ImIntVal;
-import jattack.ast.exp.IntId;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RelExp;
@@ -80,19 +77,6 @@ public class EvalVisitor extends Visitor {
     }
 
     @Override
-    public boolean visit(BoolId node) {
-        if (shortCircuit) {
-            return false;
-        }
-        return super.visit(node);
-    }
-
-    @Override
-    public void endVisit(BoolId node) {
-        endVisitTerminalNode(node);
-    }
-
-    @Override
     public boolean visit(BoolVal node) {
         if (shortCircuit) {
             return false;
@@ -142,17 +126,7 @@ public class EvalVisitor extends Visitor {
     }
 
     @Override
-    public void endVisit(IntId node) {
-        endVisitTerminalNode(node);
-    }
-
-    @Override
     public void endVisit(FloatVal node) {
-        endVisitTerminalNode(node);
-    }
-
-    @Override
-    public void endVisit(DoubleId node) {
         endVisitTerminalNode(node);
     }
 
@@ -169,6 +143,15 @@ public class EvalVisitor extends Visitor {
     @Override
     public void endVisit(LongVal node) {
         endVisitTerminalNode(node);
+    }
+
+    @Override
+    public boolean visit(RefId<?> node) {
+        if (node.getType().equals(Boolean.class)
+                && shortCircuit) {
+            return false;
+        }
+        return super.visit(node);
     }
 
     @Override

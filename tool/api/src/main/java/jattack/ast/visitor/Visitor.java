@@ -8,17 +8,14 @@ import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
 import jattack.ast.exp.ShiftExp;
-import jattack.ast.exp.DoubleId;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.AltExp;
 import jattack.ast.exp.BAriExp;
-import jattack.ast.exp.BoolId;
 import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.ImBoolVal;
 import jattack.ast.exp.ImDoubleVal;
 import jattack.ast.exp.ImIntVal;
 import jattack.ast.exp.IntArrVal;
-import jattack.ast.exp.IntId;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
@@ -75,10 +72,6 @@ public class Visitor {
 
     public void endVisit(FloatVal node) {}
 
-    public boolean visit(IntId node) { return true; }
-
-    public void endVisit(IntId node) {}
-
     public boolean visit(IntVal node) { return true; }
 
     public void endVisit(IntVal node) {}
@@ -86,10 +79,6 @@ public class Visitor {
     public boolean visit(ImIntVal node) { return true;}
 
     public void endVisit(ImIntVal node) {}
-
-    public boolean visit(DoubleId node) { return true; }
-
-    public void endVisit(DoubleId node) {}
 
     public boolean visit(DoubleVal node) { return true; }
 
@@ -118,10 +107,6 @@ public class Visitor {
     public <T> boolean visit(AltExp<T> node) { return true; }
 
     public <T> void endVisit(AltExp<T> node) {}
-
-    public boolean visit(BoolId node) { return true; }
-
-    public void endVisit(BoolId node) {}
 
     public boolean visit(RefArrAccessExp<?, ?> node) { return true; }
 

@@ -18,7 +18,21 @@ import java.util.Optional;
  * <p>
  * Remove dead code resulting from always true or false conditions.
  * 1. If:
- *      Always true {@literal ->} Replace the if statement with the then branch,
+ *      Always true {@literal ->} Replace the condition with
+ *      {@code true} and remove the else branch. We do not replace
+ *      the if statement with the then branch because it could
+ *      possibly make the remaning statements after the if statement
+ *      not reachable and thus not compilable, e.g. consider
+ *      <pre>
+ *      {@code
+ *      if (2 > 1) {
+ *         return 1;
+ *      }
+ *      return 0;
+ *      }
+ *      </pre>
+ *      where we would have double return statements if we just
+ *      replaced the entire if statement with the then branch.
  *      Always false:
  *        Without else branch {@literal ->} Remove the entire if statement.
  *        With else branch {@literal ->} Replace the if statement with the
@@ -42,8 +56,8 @@ public class DeadCodeEliminator extends ModifierVisitor<Void> {
         }
 
         if (Data.getTrueOrFlase(holeId)) {
-            // Always true, so we replace the if statement with the
-            // then branch
+            // Always true, so Replace the condition with true and
+            // remove the else branch.
 
             // Know which holes are inside the else branch and mark
             // them never reachable.
@@ -51,9 +65,10 @@ public class DeadCodeEliminator extends ModifierVisitor<Void> {
                 elseStmt.accept(new NeverReachableHoleMarker(), null);
             });
 
-            // Return then branch only (do NOT forget to visit it)
-            Statement thenStmt = ifStmt.getThenStmt();
-            return thenStmt.clone().accept(this, arg);
+            // Set condition to true and remove else branch
+            ifStmt.setCondition(new BooleanLiteralExpr(true));
+            ifStmt.removeElseStmt();
+            return super.visit(ifStmt, arg);
         } else {
             // Always false, so we replace the if statement with the
             // else branch

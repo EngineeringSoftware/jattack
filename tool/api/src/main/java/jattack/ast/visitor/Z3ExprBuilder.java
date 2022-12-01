@@ -14,14 +14,11 @@ import jattack.ast.exp.LongVal;
 import jattack.ast.exp.PreIncExp;
 import jattack.ast.exp.RefId;
 import jattack.ast.exp.ShiftExp;
-import jattack.ast.exp.BoolId;
 import jattack.ast.exp.BoolVal;
-import jattack.ast.exp.DoubleId;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.ImBoolVal;
 import jattack.ast.exp.ImDoubleVal;
 import jattack.ast.exp.ImIntVal;
-import jattack.ast.exp.IntId;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
@@ -32,7 +29,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- * Visitor to build an {@link com.microsoft.z3.Expr} from a AST node
+ * Visitor to build an {@link com.microsoft.z3.Expr} from an AST node
  * that Z3 solver can solve.
  */
 public class Z3ExprBuilder extends Visitor {
@@ -61,16 +58,6 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
-    public boolean visit(BoolId node) {
-        return buildable;
-    }
-
-    @Override
-    public void endVisit(BoolId node) {
-        stack.push(ctx.mkBoolConst(node.asStr()));
-    }
-
-    @Override
     public boolean visit(BoolVal node) {
         return buildable;
     }
@@ -91,16 +78,6 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
-    public boolean visit(IntId node) {
-        return buildable;
-    }
-
-    @Override
-    public void endVisit(IntId node) {
-        stack.push(ctx.mkIntConst(node.asStr()));
-    }
-
-    @Override
     public boolean visit(RefId<?> node) {
         return buildable;
     }
@@ -109,15 +86,19 @@ public class Z3ExprBuilder extends Visitor {
         // Skip float point numbers because for example,
         // x == x is not always true when x is NaN.
         Class<?> type = node.getType();
-        if (type.equals(double[].class)
-                || type.equals(Double.class)
-                || type.equals(float[].class)
-                || type.equals(float.class)) {
+        if (type.equals(Boolean.class)) {
+            stack.push(ctx.mkBoolConst(node.asStr()));
+        } else if (type.equals(Integer.class)) {
+            stack.push(ctx.mkIntConst(node.asStr()));
+        } else if (type.equals(double[].class)
+                    || type.equals(Double.class)
+                    || type.equals(float[].class)
+                    || type.equals(Float.class)) {
             buildable = false;
-            return;
+        } else {
+            // Do for other types
+            stack.push(ctx.mkIntConst(node.getJavaStr())); // abuse int
         }
-        // Do for other types
-        stack.push(ctx.mkIntConst(node.getJavaStr())); // abuse int
     }
 
     @Override
@@ -131,7 +112,7 @@ public class Z3ExprBuilder extends Visitor {
             return;
         }
         // We do not introduce the theory of arrays; instead we treat
-        // a array access expression as an independent variable.
+        // an array access expression as an independent variable.
         // TODO: perhaps we want to introduce the theory of arrays
         //  in the future.
         stack.pop(); // id
@@ -240,18 +221,6 @@ public class Z3ExprBuilder extends Visitor {
     @Override
     public void endVisit(LongVal node) {
         stack.push(ctx.mkInt(node.getVal()));
-    }
-
-    @Override
-    public boolean visit(DoubleId node) {
-        return buildable;
-    }
-
-    @Override
-    public void endVisit(DoubleId node) {
-        // Skip float point numbers because for example,
-        // x == x is not always true when x is NaN.
-        buildable = false;
     }
 
     @Override
