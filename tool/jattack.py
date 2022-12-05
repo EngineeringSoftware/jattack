@@ -4,6 +4,7 @@ import logging
 import os
 import seutil as su
 import subprocess
+import sys
 import time
 from collections import defaultdict
 from dataclasses import dataclass
@@ -29,7 +30,7 @@ su.log.setup(
     log_file=log_file,
     level_stderr=logging.WARNING,
     level_file=logging.DEBUG)
-logger = su.log.get_logger(__name__, level=logging.DEBUG)
+logger = su.log.get_logger(__name__)
 logger.info(f"See log file: {log_file}")
 
 class BailOutError(RuntimeError):
@@ -90,16 +91,43 @@ class Args:
         self,
         clz: str,
         n_gen: int,
-        src: Path,
+        src: str,
         n_itrs: int,
         seed: int,
         java_envs: List[Tuple[str, List[str]]]
     ):
         self.clz = clz
         self.n_gen = n_gen
-        self.src = src
         self.n_itrs = n_itrs
         self.seed = seed
+
+        if src is None:
+            self.src = CWD / f"{clz.split('.')[-1]}.java"
+        else:
+            self.src = Path(src)
+        #fi
+
+        if java_envs is None:
+            java_home = os.environ.get("JAVA_HOME")
+            if java_home is None:
+                raise ValueError(
+                    "JAVA_HOME environment variable is not set. Please "
+                    "either set it or explicitly pass `--java_envs` "
+                    "argument.")
+            #fi
+            # By default we use java in $JAVA_HOME and compare level 4 and
+            # level 1.
+            java_envs = [
+                (
+                    os.environ["JAVA_HOME"],
+                    ["-XX:TieredStopAtLevel=4"],
+                ),
+                (
+                    os.environ["JAVA_HOME"],
+                    ["-XX:TieredStopAtLevel=1"],
+                ),
+            ]
+        #fi
         self.java_envs = [
             JavaEnv(
                 Path(java_env[0]),
@@ -108,11 +136,14 @@ class Args:
         ]
 
         # Check all java environments are valid
-        if len(self.java_envs) < 2:
+        if len(self.java_envs) == 0:
             raise ValueError(
-                "Expected at least 2 java environments for "
-                "differential testing but found only "
-                f"{len(self.java_envs)}")
+                "No java environments are provided for testing.")
+        #fi
+        if len(self.java_envs) == 1:
+            logger.info(
+                f"Only one java environment is provided: {self.java_envs[0]}."
+                " Differential testing will not work. Only crash will be reported.")
         #fi
         for java_env in self.java_envs:
             if not (java_env.java_home / "bin" / "java").is_file():
@@ -148,10 +179,11 @@ def exceute_and_test(
     build_dir: Path,
     javac: Path,
     java_envs: List[JavaEnv]
-) -> None:
+) -> bool:
     """
     Execute every generated program on different JIT compilers and
     perform differential testing over results.
+    Return true if all tests pass otherwise return false.
 
     :raises: BailOutError if something is wrong
     """
@@ -165,6 +197,7 @@ def exceute_and_test(
     cp = str(jattack_jar) + os.pathsep + str(build_dir)
 
     # Execute every generated porgrams
+    all_tests_pass = True
     su.io.rm(output_dir)
     su.io.mkdir(output_dir, parents=True)
     for gen_i, gen_src in enumerate(all_gen_paths):
@@ -182,6 +215,7 @@ def exceute_and_test(
                 f"{javac} -cp {cp} {gen_src} -d {build_dir}",
                 check_returncode=0)
         except BashError as e:
+            all_tests_pass = False
             logger.error(e)
             print_not_ok(
                 test_number=test_number,
@@ -210,6 +244,7 @@ def exceute_and_test(
         #rof
         if crashed_jes:
             # At least one java environment under test crashed
+            all_tests_pass = False
             print_not_ok(
                 test_number=test_number,
                 desc=gen_clz,
@@ -229,6 +264,7 @@ def exceute_and_test(
         #rof
         if len(jes_by_output) > 1:
             # Diff
+            all_tests_pass = False
             print_not_ok(
                 test_number=test_number,
                 desc=gen_clz,
@@ -239,9 +275,11 @@ def exceute_and_test(
 
         print_ok(test_number=test_number, desc=gen_clz)
     #rof
+    return all_tests_pass
 #fed
 
 def generate(
+    *args, # extra options for jattack jar
     clz: str,
     n_gen: int,
     src: Path,
@@ -250,7 +288,8 @@ def generate(
     jattack_jar: Path,
     gen_dir: Path,
     tmpl_classpath: Path,
-    java: Path
+    java: Path,
+    extra_java_opts: List[str] = []
 ) -> None:
     """
     Generate programs from the given template using JAttack.
@@ -264,16 +303,20 @@ def generate(
 
     # Run JAttack
     try:
-        bash_run(
-            f"{java} -javaagent:{jattack_jar} -cp {tmpl_classpath}"
+        res = bash_run(
+            f"{java} -javaagent:{jattack_jar} -cp {tmpl_classpath}" +\
+            " " + " ".join(extra_java_opts) +\
             f" jattack.driver.Driver"
             f" --clzName={clz}"
             f" --nOutputs={n_gen}"
             f" --srcPath={src}"
             f" --nInvocations={n_itrs}" +\
             (f" --seed={seed}" if seed else "") +\
-            f" --outputDir={gen_dir}",
+            f" --outputDir={gen_dir}" +\
+            " " + " ".join(args) +\
+            " 2>&1",
             check_returncode=0)
+        print(res.stdout, end="")
     except BashError as e:
         logger.error(e)
         raise BailOutError("Generating from template failed")
@@ -319,6 +362,7 @@ def print_bail_out(msg: str) -> None:
     Print \"bail out\" as TAP format.
     """
     print(f"Bail out! {msg}")
+#fed
 
 def print_not_ok(
     test_number: int,
@@ -333,12 +377,14 @@ def print_not_ok(
     print(f"  message: '{msg}'")
     print(f"  data: {data}")
     print("  ...")
+#fed
 
 def print_ok(test_number: int, desc: str) -> None:
     """
     Print \"ok\" test point  as TAP format.
     """
     print(f"ok {test_number} - {desc}")
+#fed
 
 def bash_run(
     command: str,
@@ -348,7 +394,7 @@ def bash_run(
     """
     Run a command in bash.
     """
-    logger.info(f"Bash: {command}")
+    logger.debug(f"Bash: {command}")
     res = su.bash.run(command, check_returncode=check_returncode,
     timeout=timeout)
     #logger.info(res.stdout)
@@ -378,7 +424,7 @@ def main(
     :param java_envs: the java environments to be differentially
         tested, which should be provided as a list of a tuple of java
         home string and a list of java option strings, e.g.,
-        `--java_envs=[/home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4],/home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]]`
+        `--java_envs=[[/home/zzq/opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4]],[/home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]]]`
         means we want to differentially test java 11 at level 4 and
         java 17 at level 1.
         Note, the first java environment of the list will be used to
@@ -388,37 +434,9 @@ def main(
         is used to run JAttack itself, which means its version should
         be at least 11.
         By default, $JAVA_HOME in the system with level 4 and level 1
-        is used, i.e.,
-        `[$JAVA_HOME,[-XX:TieredStopAtLevel=4],$JAVA_HOME,[-XX:TieredStopAtLevel=1]]`
+        are used, i.e.,
+        `--java_envs=[[$JAVA_HOME,[-XX:TieredStopAtLevel=4]],[$JAVA_HOME,[-XX:TieredStopAtLevel=1]]]`
     """
-
-    if src is None:
-        src = CWD / f"{clz}.java"
-    else:
-        src = Path(src)
-    #fi
-    if java_envs is None:
-        java_home = os.environ.get("JAVA_HOME")
-        if java_home is None:
-            raise ValueError(
-                "JAVA_HOME environment variable is not set. Please "
-                "either set it or explicitly pass `--java_envs` "
-                "argument.")
-        #fi
-        # By default we use java in $JAVA_HOME and compare level 4 and
-        # level 1.
-        java_envs = [
-            (
-                os.environ["JAVA_HOME"],
-                ["-XX:TieredStopAtLevel=4"],
-            ),
-            (
-                os.environ["JAVA_HOME"],
-                ["-XX:TieredStopAtLevel=1"],
-            ),
-        ]
-        #yrt
-    #fi
     args = Args(
         clz=clz,
         n_gen=n_gen,
@@ -442,7 +460,7 @@ def main(
             gen_dir=args.gen_dir,
             tmpl_classpath=args.build_dir,
             java=args.java)
-        exceute_and_test(
+        res = exceute_and_test(
             tmpl_clz=args.clz,
             gen_dir=args.gen_dir,
             output_dir=args.output_dir,
@@ -450,8 +468,12 @@ def main(
             build_dir=args.build_dir,
             javac=args.javac,
             java_envs=args.java_envs)
+        if not res:
+            sys.exit(1)
+        #fi
     except BailOutError as e:
         print_bail_out(e.msg)
+        sys.exit(1)
     #yrt
 #fed
 

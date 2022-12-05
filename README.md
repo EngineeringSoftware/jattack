@@ -237,38 +237,49 @@ cd tool
 ### Full List of Arguments
 ```
   -h, --help            Show this help message and exit.
-
   --config CONFIG       Path to a configuration file.
-
   --print_config[=flags]
-                        Print the configuration after applying all other arguments and exit.
-                        The optional flags are one or more keywords separated by comma which
-                        modify the output. The supported flags are: comments, skip_default,
-                        skip_null.
+                        Print the configuration after applying all
+                        other arguments and exit. The optional flags
+                        are one or more keywords separated by comma
+                        which modify the output. The supported flags
+                        are: comments, skip_default, skip_null.
 
-  --clz CLZ             the fully qualified class name of the template, separated with "."
-                        (required, type: str)
-  --n_gen N_GEN         the total number of generated programs (required, type: int)
-  --src SRC             the path to the source file of the template, by default using
-                        `./{clz}.java` (type: Union[str, null], default: null)
-  --n_itrs N_ITRS       the number of iterations to trigger JIT (type: int, default: 100000)
-  --seed SEED           the random seed used by JAttack during generation, fix this to
-                        reproduce a previous generation. (type: Union[int, null], default:
+  --clz CLZ             the fully qualified class name of the
+                        template, separated with "." (required, type:
+                        str)
+  --n_gen N_GEN         the total number of generated programs
+                        (required, type: int)
+  --src SRC             the path to the source file of the template.
+                        By default, `./{clz}.java` is used. (type:
+                        Optional[str], default: null)
+  --n_itrs N_ITRS       the number of iterations to trigger JIT (type:
+                        int, default: 100000)
+  --seed SEED           the random seed used by JAttack during
+                        generation, fix this to reproduce a previous
+                        generation. (type: Optional[int], default:
                         null)
   --java_envs JAVA_ENVS, --java_envs+ JAVA_ENVS
-                        the java environments to be differentially tested, which should be
-                        provided as a list of a tuple of java home string and a list of java
-                        option strings, e.g., `--java_envs=[/home/zzq/opt/jdk-11.0.15,[-XX:Tie
-                        redStopAtLevel=4],/home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel=1]]`
-                        means we want to differentially test java 11 at level 4 and java 17 at
-                        level 1. Note, the first java environment of the list will be used to
-                        compile the template and generated programs, which means the version
-                        of the first java environment has to be less than or equal to the
-                        remaining ones. Also, the first java environment is used to run
-                        JAttack itself, which means its version should be at least 11. By
-                        default, $JAVA_HOME in the system with level 4 and level 1 will be
-                        used, i.e., `[$JAVA_HOME,[-XX:TieredStopAtLevel=4],$JAVA_HOME,[-XX:Tie
-                        redStopAtLevel=1]]` (type: Union[List[Tuple[str, List[str]]], null],
+                        the java environments to be differentially
+                        tested, which should be provided as a list of
+                        a tuple of java home string and a list of java
+                        option strings, e.g., `--java_envs=[[/home/zzq
+                        /opt/jdk-11.0.15,[-XX:TieredStopAtLevel=4]],[/
+                        home/zzq/opt/jdk-17.0.3,[-XX:TieredStopAtLevel
+                        =1]]]` means we want to differentially test
+                        java 11 at level 4 and java 17 at level 1.
+                        Note, the first java environment of the list
+                        will be used to compile the template and
+                        generated programs, which means the version of
+                        the first java environment has to be less than
+                        or equal to the remaining ones. Also, the
+                        first java environment is used to run JAttack
+                        itself, which means its version should be at
+                        least 11. By default, $JAVA_HOME in the system
+                        with level 4 and level 1 are used, i.e., `--ja
+                        va_envs=[[$JAVA_HOME,[-XX:TieredStopAtLevel=4]
+                        ],[$JAVA_HOME,[-XX:TieredStopAtLevel=1]]]`
+                        (type: Optional[List[Tuple[str, List[str]]]],
                         default: null)
 ```
 

@@ -16,13 +16,11 @@ public class SkTestDynamicUseCase {
 
     @Entry
     static int m(int x) {
-        // intVal() will work only after we implement hasChoice for
-        // every Exp.
         return alt(decide(x), intVal()).eval();
     }
 
-    @Argument(0)
-    static int arg0() {
+    @Argument(1)
+    static int arg1() {
         return -1;
     }
 }

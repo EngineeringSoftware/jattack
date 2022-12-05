@@ -1,6 +1,8 @@
 package jattack.examples;
 
 import jattack.annotation.Entry;
+import jattack.exception.InvokedFromNotDriverException;
+
 import static jattack.Boom.*;
 
 public class SkTestPreIncApis {
@@ -14,6 +16,9 @@ public class SkTestPreIncApis {
         preIncIntStmt("s").eval();
         if (relation(intId("x"), intId("x"), GT).eval()) {
             preIncIntStmt().eval();
+        }
+        if (s == 0) {
+            throw new InvokedFromNotDriverException();
         }
         return x + y;
     }
