@@ -289,7 +289,8 @@ def generate(
     gen_dir: Path,
     tmpl_classpath: Path,
     java: Path,
-    extra_java_opts: List[str] = []
+    gen_suffix: str = "Gen",
+    extra_java_opts: List[str] = [],
 ) -> None:
     """
     Generate programs from the given template using JAttack.
@@ -313,6 +314,7 @@ def generate(
             f" --nInvocations={n_itrs}" +\
             (f" --seed={seed}" if seed else "") +\
             f" --outputDir={gen_dir}" +\
+            f" --outputPostfix={gen_suffix}"
             " " + " ".join(args) +\
             " 2>&1",
             check_returncode=0)
@@ -324,7 +326,7 @@ def generate(
 
     # Literally no hole in the template or no hole reached in the
     # template during generation
-    if list(gen_dir.glob("*0.java")):
+    if list(gen_dir.glob(f"*{gen_suffix}0.java")):
         raise BailOutError("No reachable hole in the template!")
     #fi
 #fed
