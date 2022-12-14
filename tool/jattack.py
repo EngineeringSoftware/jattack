@@ -271,6 +271,7 @@ def exceute_and_test(
                 msg=f"Found a potential diff bug",
                 data=DiffBugData(diff_groups=list(jes_by_output.values()))
             )
+            continue
         #fi
 
         print_ok(test_number=test_number, desc=gen_clz)
