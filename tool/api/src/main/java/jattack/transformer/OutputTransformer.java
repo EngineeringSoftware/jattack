@@ -287,9 +287,6 @@ public class OutputTransformer extends Transformer {
                 .append("}");
         // Initiate checksum instance
         sb.append("WrappedChecksum cs = new WrappedChecksum();");
-        // Main loop
-        sb.append("for (int i = 0; i < N; ++i) {")
-                .append("try {");
         // Create arguments for entry methods.
         String argVar = "arg";
         for (int i = 0; i < argMethodNames.size(); i++) {
@@ -299,6 +296,9 @@ public class OutputTransformer extends Transformer {
                     .append(" = ")
                     .append(argMethodNames.get(i)).append("();");
         }
+        // Main loop
+        sb.append("for (int i = 0; i < N; ++i) {")
+                .append("try {");
         // Invoke the entry method
         StringBuilder entryMethodCall = new StringBuilder();
         entryMethodCall.append(entryMethodName).append("(");
