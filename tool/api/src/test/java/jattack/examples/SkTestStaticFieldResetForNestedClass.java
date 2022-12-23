@@ -2,6 +2,7 @@ package jattack.examples;
 
 import static jattack.Boom.*;
 import jattack.annotation.Entry;
+import jattack.exception.InvokedFromNotDriverException;
 
 /**
  * Test static fields of nested classes can be re-intialized correctly
@@ -26,6 +27,8 @@ public class SkTestStaticFieldResetForNestedClass {
      * filled. However, when executing those generated programs, the
      * first hole will be reached and executed and we will see an
      * InvokedFromDriver exception.
+     * For final fields, we directly check if the value is changed; if
+     * so we explicitly throw exceptions.
      * Similarly, we check if the reset mechanism work well for final
      * fields and primitive fields, with initialized values and
      * without initialized values.
@@ -47,6 +50,12 @@ public class SkTestStaticFieldResetForNestedClass {
         String hello = "hello";
         if (C.s == null) {
             C.s = refId(String.class, "hello").eval();
+        }
+        if (C.finalI != 1) {
+            throw new InvokedFromNotDriverException();
+        }
+        if (!C.finalS.equals("foo")) {
+            throw new InvokedFromNotDriverException();
         }
         int x = intVal().eval();
     }
