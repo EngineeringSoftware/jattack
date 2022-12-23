@@ -126,7 +126,9 @@ public class TypeUtil {
         }
     }
 
-    // NOTE this method has side effect, which updates status passed in.
+    /**
+     * NOTE this method has side effect, which updates status passed in.
+     */
     public static boolean captureStatusAndEquals(
             Class<?> clz, Set<String> fieldNames,
             Map<String, Object> status)

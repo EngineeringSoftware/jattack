@@ -60,6 +60,7 @@ public class Driver {
     // cannot change after init
     private static Class<?> tmplClz;
     private static Method entryMethod;
+    private static Method[] argMethods;
     private static String initialTmplSrcCode;
     private static ClassBytes initialTmplClassBytes;
     private static Map<String, Map<String, Object>> initialFieldValues; // {class name, {field name, field value}}
@@ -305,7 +306,8 @@ public class Driver {
     }
 
     private static void prepareForRunningTmpl()
-            throws ClassNotFoundException, IllegalAccessException {
+            throws ClassNotFoundException, IllegalAccessException,
+            NoSuchMethodException {
         try {
             compiler.compileAndRedefine(tmplClzFullName, initialTmplSrcCode);
         } catch (CompilationException e) {
@@ -316,6 +318,7 @@ public class Driver {
         tmplClz = TypeUtil.loadClz(tmplClzFullName);
         allClzes = TypeUtil.loadClzes(allClassNamesInTmpl);
         entryMethod = getEntryMethod(tmplClz);
+        argMethods = getArgumentMethods(tmplClz);
         saveInitialTmplStatus();
     }
 
@@ -340,13 +343,13 @@ public class Driver {
 
     private static void runTmpl0()
             throws IllegalAccessException, InvocationTargetException,
-            NoSuchFieldException, CompilationException,
-            NoSuchMethodException {
+            NoSuchFieldException, CompilationException {
         if (Config.mimicExecution) {
             checksum = new WrappedChecksum();
         }
         int prevNHolesFilled = 0;
         Map<String, Object> currFieldValues = new HashMap<>();
+        Object[] argValues = execArgMethodsAndGetValues(argMethods);
         for (int i = 0; i < Config.nInvocations; i++) {
             Log.debug("# iteration " + (i + 1));
             if (Config.optHotFilling || Config.optSolverAid) {
@@ -357,7 +360,7 @@ public class Driver {
             }
 
             // Execute the entry method
-            executeEntryMethod();
+            executeEntryMethod(argValues);
 
             // We want to execute with full iterations when we turn on
             // Config.mimicExecution for testing; thus we skip all
@@ -408,30 +411,26 @@ public class Driver {
     }
 
     /**
-     * Wrap {@link Driver#executeEntryMethod0()} to help with
+     * Wrap {@link Driver#executeEntryMethod0(Object[])} to help with
      * profiling.
      */
-    private static void executeEntryMethod()
-            throws InvocationTargetException, IllegalAccessException,
-            NoSuchMethodException {
+    private static void executeEntryMethod(Object... argValues)
+            throws InvocationTargetException, IllegalAccessException {
         if (Config.isProfiling) {
             long beg = System.currentTimeMillis();
-            executeEntryMethod0();
+            executeEntryMethod0(argValues);
             totalExecTime += System.currentTimeMillis() - beg;
         } else {
-            executeEntryMethod0();
+            executeEntryMethod0(argValues);
         }
     }
 
     /**
      * Execute the entry method using reflection.
      */
-    private static void executeEntryMethod0()
-            throws InvocationTargetException, IllegalAccessException,
-            NoSuchMethodException {
-        Method[] argMethods = getArgumentMethods(tmplClz);
+    private static void executeEntryMethod0(Object... argValues)
+            throws InvocationTargetException, IllegalAccessException {
         try {
-            Object[] argValues = execArgMethodsAndGetValues(argMethods);
             Object ret = entryMethod.invoke(null, argValues);
             if (Config.mimicExecution
                     && !entryMethod.getReturnType().equals(Void.TYPE)) {
