@@ -235,7 +235,7 @@ def exceute_and_test(
                 f" {opts}"
                 f" -XX:ErrorFile={output_dir_per_gen}/he_err_pid%p.log"
                 f" -XX:ReplayDataFile={output_dir_per_gen}/replay_pid%p.log"
-                f" {gen_clz} >{output_file} 2>/dev/null"
+                f" {gen_clz} >{output_file}"
             )
             if res.returncode != 0:
                 logger.error(res.stderr)
