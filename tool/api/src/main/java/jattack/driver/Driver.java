@@ -1,10 +1,10 @@
 package jattack.driver;
 
 import com.github.javaparser.ast.CompilationUnit;
-import org.csutil.checksum.WrappedChecksum;
 import jattack.Config;
 import jattack.Constants;
 import jattack.annotation.Argument;
+import jattack.annotation.Arguments;
 import jattack.annotation.Entry;
 import jattack.ast.Node;
 import jattack.bytecode.StaticFieldAnalyzer;
@@ -22,6 +22,7 @@ import jattack.util.IOUtil;
 import jattack.util.Rand;
 import jattack.util.TypeUtil;
 import jattack.util.UniqueList;
+import org.csutil.checksum.WrappedChecksum;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -60,7 +61,9 @@ public class Driver {
     // cannot change after init
     private static Class<?> tmplClz;
     private static Method entryMethod;
-    private static Method[] argMethods;
+    private static boolean entryMethodIsStatic;
+    private static Method[] argMethods; // separate @Argument methods
+    private static Method argsMethod; // single @Arguments method
     private static String initialTmplSrcCode;
     private static ClassBytes initialTmplClassBytes;
     private static Map<String, Map<String, Object>> initialFieldValues; // {class name, {field name, field value}}
@@ -68,9 +71,10 @@ public class Driver {
     private static Set<Class<?>> allClzes; // including all nested classes
     private static String tmplClzFullName;
     private static String tmplClzSimpleName;
+    private static String[] argumentMethodNames;
+    private static String argsMethodName;
     private static OutputTransformer outputTransformer;
     private static OnDemandTransformer onDemandTransformer;
-    private static String[] argumentMethodNames;
     private static WrappedChecksum checksum; // for testing, only used when Config.mimicExecution is on
 
     // flags per gen
@@ -134,13 +138,14 @@ public class Driver {
         tmplClzFullName = Config.tmplClzFullName;
         tmplClzSimpleName = TypeUtil.getSimpleName(tmplClzFullName);
 
-        // TODO: Check @Entry and @Argument are used correctly in the
-        //  template.
+        // TODO: Check @Entry, @Argument, @Arguments are used
+        //  correctly in the template.
 
         // Init argumentMethodNames
         try {
             Class<?> clz = TypeUtil.loadClz(tmplClzFullName, false);
-            setArgumentMethodNames(clz);
+            argumentMethodNames = getArgumentMethodNames(clz);
+            argsMethodName = getArgsMethodName(clz);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -171,10 +176,13 @@ public class Driver {
                     cu, Config.optHotFilling, Config.optSolverAid);
         }
         String entryMethodName = assigner.getEntryMethodName();
+        String[] entryMethodParamTypes = assigner.getEntryMethodParamTypes();
         boolean entryMethodReturnsVoid = assigner.getEntryMethodReturnsVoid();
+        entryMethodIsStatic = assigner.getEntryMethodIsStatic();
         outputTransformer = new OutputTransformer(
-                cu, tmplClzSimpleName, entryMethodName,
-                entryMethodReturnsVoid, Arrays.asList(argumentMethodNames));
+                cu, tmplClzSimpleName, entryMethodName, entryMethodParamTypes,
+                entryMethodReturnsVoid, entryMethodIsStatic,
+                argumentMethodNames, argsMethodName);
 
         // Write files
         if (Config.saveHoleValues) {
@@ -319,6 +327,7 @@ public class Driver {
         allClzes = TypeUtil.loadClzes(allClassNamesInTmpl);
         entryMethod = getEntryMethod(tmplClz);
         argMethods = getArgumentMethods(tmplClz);
+        argsMethod = getArgsMethod(tmplClz);
         saveInitialTmplStatus();
     }
 
@@ -349,7 +358,11 @@ public class Driver {
         }
         int prevNHolesFilled = 0;
         Map<String, Object> currFieldValues = new HashMap<>();
-        Object[] argValues = execArgMethodsAndGetValues(argMethods);
+        Object[] argsIncludingReceiver = execAndGetArgValues();
+        Object receiver = entryMethodIsStatic ? null : argsIncludingReceiver[0];
+        Object[] args = entryMethodIsStatic ?
+                argsIncludingReceiver :
+                Arrays.copyOfRange(argsIncludingReceiver, 1, argsIncludingReceiver.length);
         for (int i = 0; i < Config.nInvocations; i++) {
             Log.debug("# iteration " + (i + 1));
             if (Config.optHotFilling || Config.optSolverAid) {
@@ -360,7 +373,7 @@ public class Driver {
             }
 
             // Execute the entry method
-            executeEntryMethod(argValues);
+            executeEntryMethod(receiver, args);
 
             // We want to execute with full iterations when we turn on
             // Config.mimicExecution for testing; thus we skip all
@@ -411,27 +424,28 @@ public class Driver {
     }
 
     /**
-     * Wrap {@link Driver#executeEntryMethod0(Object[])} to help with
-     * profiling.
+     * Wrap {@link Driver#executeEntryMethod0(Object, Object...)} to
+     * help with profiling.
      */
-    private static void executeEntryMethod(Object... argValues)
+    private static void executeEntryMethod(Object receiver, Object... args)
             throws InvocationTargetException, IllegalAccessException {
         if (Config.isProfiling) {
             long beg = System.currentTimeMillis();
-            executeEntryMethod0(argValues);
+            executeEntryMethod0(receiver, args);
             totalExecTime += System.currentTimeMillis() - beg;
         } else {
-            executeEntryMethod0(argValues);
+            executeEntryMethod0(receiver, args);
         }
     }
 
     /**
-     * Execute the entry method using reflection.
+     * Execute the entry method using reflection. receiver should be
+     * null for a static entry method.
      */
-    private static void executeEntryMethod0(Object... argValues)
+    private static void executeEntryMethod0(Object receiver, Object... args)
             throws InvocationTargetException, IllegalAccessException {
         try {
-            Object ret = entryMethod.invoke(null, argValues);
+            Object ret = entryMethod.invoke(receiver, args);
             if (Config.mimicExecution
                     && !entryMethod.getReturnType().equals(Void.TYPE)) {
                 // We don't checksum anything in a generated program
@@ -734,7 +748,9 @@ public class Driver {
         // Output only if the generated program is able to compile
         if (Config.mimicExecution) {
             // print out checksum value
-            IOUtil.writeToFile(Config.outputDir, outputClzName + "_output.txt", checksum.getValue() + "\n");
+            IOUtil.writeToFile(Config.outputDir,
+                               outputClzName + "_output.txt",
+                               checksum.getValue() + "\n");
             outputJavaFile(outputClzName, code);
         } else if (canOutput) {
             outputJavaFile(outputClzName, code);
@@ -786,7 +802,7 @@ public class Driver {
         return methods;
     }
 
-    private static void setArgumentMethodNames(Class<?> clz) {
+    private static String[] getArgumentMethodNames(Class<?> clz) {
         Set<Method> argMethods = new TreeSet<>((m1, m2) -> {
             // Sort argument methods by value in @Argument
             int v1 = m1.getAnnotation(Argument.class).value();
@@ -799,8 +815,43 @@ public class Driver {
             }
         }
         // get method names
-        argumentMethodNames = argMethods.stream().map(Method::getName)
+        return argMethods.stream().map(Method::getName)
                 .toArray(String[]::new);
+    }
+
+    private static Method getArgsMethod(Class<?> clz)
+            throws SecurityException, NoSuchMethodException {
+        if (argsMethodName == null) {
+            // no such method
+            return null;
+        }
+        Method m = clz.getDeclaredMethod(argsMethodName);
+        m.setAccessible(true);
+        return m;
+    }
+
+    private static String getArgsMethodName(Class<?> clz) {
+        for (Method m : clz.getDeclaredMethods()) {
+            if (m.isAnnotationPresent(Arguments.class)) {
+                return m.getName();
+            }
+        }
+        // no such method
+        return null;
+    }
+
+    private static Object[] execAndGetArgValues()
+            throws InvocationTargetException, IllegalAccessException {
+        if (argsMethod != null) {
+            return execArgsMethodAndGetValues(argsMethod);
+        } else {
+            return execArgMethodsAndGetValues(argMethods);
+        }
+    }
+
+    private static Object[] execArgsMethodAndGetValues(Method method)
+            throws InvocationTargetException, IllegalAccessException {
+        return (Object[]) method.invoke(null);
     }
 
     private static Object[] execArgMethodsAndGetValues(Method[] methods)

@@ -24,8 +24,7 @@ import jattack.transformer.visitor.RemoveVisitor;
 import jattack.transformer.visitor.RenameVisitor;
 import jattack.util.JPUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * Transform templates in output.
@@ -37,9 +36,11 @@ public class OutputTransformer extends Transformer {
      */
     private final String inClzName;
     private final String entryMethodName;
+    private final String[] entryMethodParamTypes;
     private final boolean entryMethodReturnsVoid;
-    private final List<String> argMethodNames;
-    private final List<String> argMethodRetTypes;
+    private final boolean entryMethodIsStatic;
+    private final String[] argMethodNames;
+    private final String argsMethodName;
 
     /*
      * Unchanged after initialization.
@@ -52,18 +53,31 @@ public class OutputTransformer extends Transformer {
     private ClassOrInterfaceDeclaration clz;
     private String outClzName;
 
+    /**
+     * Either argMethodNames or argsMethodName are provided. It does
+     * not make sense to have them both. Namely, argMethodNames should
+     * be given as an empty array when argsMethodName is non-null; and
+     * argsMethodName has to be null when argMethodNames are given as
+     * a non-empty array.
+     * TODO: a check for above conditions.
+     */
     public OutputTransformer(
             CompilationUnit origCu,
             String inClzName,
             String entryMethodName,
+            String[] entryMethodParamTypes,
             boolean entryMethodReturnsVoid,
-            List<String> argMethodNames) {
+            boolean entryMethodIsStatic,
+            String[] argMethodNames,
+            String argsMethodName) {
         super(origCu);
         this.inClzName = inClzName;
         this.entryMethodName = entryMethodName;
+        this.entryMethodParamTypes = entryMethodParamTypes;
         this.entryMethodReturnsVoid = entryMethodReturnsVoid;
+        this.entryMethodIsStatic = entryMethodIsStatic;
         this.argMethodNames = argMethodNames;
-        this.argMethodRetTypes = computeArgMethodRetTypes();
+        this.argsMethodName = argsMethodName;
     }
 
     /**
@@ -114,8 +128,9 @@ public class OutputTransformer extends Transformer {
                         return false;
                     }
                     AssignExpr e = s.getExpression().asAssignExpr();
-                    return e.getTarget().isNameExpr() && e.getTarget().asNameExpr().getNameAsString().equals("s1")
-                            && e.getOperator() == AssignExpr.Operator.ASSIGN;
+                    return e.getTarget().isNameExpr()
+                           && e.getTarget().asNameExpr().getNameAsString().equals("s1")
+                           && e.getOperator() == AssignExpr.Operator.ASSIGN;
                 }).get();
         MethodCallExpr trackMethodCall = stmt.asExpressionStmt().getExpression().asAssignExpr().getValue().asMethodCallExpr();
         if (!trackMethodCall.getNameAsString().equals(Constants.TRACK_METHOD)) {
@@ -239,15 +254,6 @@ public class OutputTransformer extends Transformer {
         }
     }
 
-    private List<String> computeArgMethodRetTypes() {
-        List<String> types = new ArrayList<>();
-        ClassOrInterfaceDeclaration origClz = origCu.getClassByName(inClzName).get();
-        for (String name : argMethodNames) {
-            types.add(origClz.getMethodsByName(name).get(0).getTypeAsString());
-        }
-        return types;
-    }
-
     /**
      * Generate a main method which invokes main0 and print the return
      * value of main0.
@@ -288,27 +294,53 @@ public class OutputTransformer extends Transformer {
         // Initiate checksum instance
         sb.append("WrappedChecksum cs = new WrappedChecksum();");
         // Create arguments for entry methods.
-        String argVar = "arg";
-        for (int i = 0; i < argMethodNames.size(); i++) {
-            sb.append(argMethodRetTypes.get(i))
-                    .append(" ")
-                    .append(argVar).append(i + 1)
-                    .append(" = ")
-                    .append(argMethodNames.get(i)).append("();");
+        String argVar = "eArg";
+        String argsVar = "eArgs";
+        String receiverVar = "rcvr";
+        if (argsMethodName != null) {
+            sb.append("Object[] ").append(argsVar).append(" = ")
+              .append(argsMethodName).append("();");
+        }
+        // receiver variable initialization
+        if (!entryMethodIsStatic) {
+            // The class name needs to be modified per transformation
+            sb.append(inClzName).append(" ").append(receiverVar)
+              .append(" = ");
+            if (argsMethodName != null) {
+                sb.append("(").append(inClzName).append(")") // cast
+                  .append(argsVar).append("[0]");
+            } else {
+                sb.append(argMethodNames[0]).append("()");
+            }
+            sb.append(";");
+        }
+        // argument variables initialization
+        for (int i = 0; i < entryMethodParamTypes.length; i++) {
+            String type = entryMethodParamTypes[i];
+            sb.append(type)
+              .append(" ")
+              .append(argVar).append(i + 1)
+              .append(" = ");
+            int j = entryMethodIsStatic ? i : i + 1;
+            if (argsMethodName != null) {
+                sb.append("(").append(type).append(")") // cast
+                  .append(argsVar).append("[").append(j).append("]");
+            } else {
+                sb.append(argMethodNames[j]).append("()");
+            }
+            sb.append(";");
         }
         // Main loop
         sb.append("for (int i = 0; i < N; ++i) {")
                 .append("try {");
         // Invoke the entry method
-        StringBuilder entryMethodCall = new StringBuilder();
-        entryMethodCall.append(entryMethodName).append("(");
-        for (int i = 0; i < argMethodNames.size(); i++) {
-            if (i != 0) {
-                entryMethodCall.append(", ");
-            }
-            entryMethodCall.append(argVar).append(i + 1);
+        StringJoiner entryMethodCall = new StringJoiner(
+                ", ",
+                (entryMethodIsStatic ? "" : receiverVar + ".") + entryMethodName + "(",
+                ")");
+        for (int i = 0; i < entryMethodParamTypes.length; i++) {
+            entryMethodCall.add(argVar + (i + 1));
         }
-        entryMethodCall.append(")");
         if (entryMethodReturnsVoid) {
             sb.append(entryMethodCall).append(";");
         } else {

@@ -7,14 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a static method that returns a value that is used as one
- * argument of the entry method. The value of the annotation
- * represents which argument, e.g., {@code @Argument(1)} means the
- * first argument.
+ * Annotates a static method that returns an array of values that are
+ * used as all the arguments when invoking the entry method.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Documented
-public @interface Argument {
-    int value();
+public @interface Arguments {
 }

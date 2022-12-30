@@ -31,7 +31,9 @@ public class HoleIdAssigner extends Transformer {
     private int id;
     private final String className;
     private String entryMethodName;
+    private String[] entryMethodParamTypes;
     private boolean entryMethodReturnsVoid;
+    private boolean entryMethodIsStatic;
 
     /**
      * Flag if we mark condition hole when assigning identifier.
@@ -85,12 +87,16 @@ public class HoleIdAssigner extends Transformer {
             throw new RuntimeException("More than one entry method is found!");
         }
         MethodDeclaration entryMethod = entryMethods.get(0);
-        if (!entryMethod.getModifiers().contains(Modifier.staticModifier())) {
-            // TODO: support non-static entry method.
-            throw new RuntimeException("The entry method has to be static!");
-        }
         entryMethodName = entryMethod.getNameAsString();
+        entryMethodParamTypes = entryMethod.getParameters().stream()
+                                           .map(p -> p.getTypeAsString() + (p.isVarArgs() ? "[]" : ""))
+                                           .toArray(String[]::new);
         entryMethodReturnsVoid = entryMethod.getType().isVoidType();
+        entryMethodIsStatic = entryMethod.isStatic();
+    }
+
+    public String[] getEntryMethodParamTypes() {
+        return entryMethodParamTypes;
     }
 
     public String getEntryMethodName() {
@@ -99,6 +105,10 @@ public class HoleIdAssigner extends Transformer {
 
     public boolean getEntryMethodReturnsVoid() {
         return entryMethodReturnsVoid;
+    }
+
+    public boolean getEntryMethodIsStatic() {
+        return entryMethodIsStatic;
     }
 
     /**

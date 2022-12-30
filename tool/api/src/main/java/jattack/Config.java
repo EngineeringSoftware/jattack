@@ -1,6 +1,5 @@
 package jattack;
 
-import jattack.ast.exp.FloatVal;
 import jattack.driver.SearchStrategy;
 
 import java.util.Arrays;
