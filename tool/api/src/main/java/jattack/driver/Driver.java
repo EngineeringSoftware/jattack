@@ -54,7 +54,7 @@ public class Driver {
     /**
      * In-memory compiler to compile and load templates.
      */
-    public static final InMemoryCompiler compiler = new InMemoryCompiler();
+    public static InMemoryCompiler compiler;
 
     /*---------------------- Internal variables. -------------------*/
 
@@ -134,6 +134,7 @@ public class Driver {
      */
     private static void init(String[] args) {
         Cli.parseArgs(args);
+        compiler = new InMemoryCompiler();
         isDriven = true;
         tmplClzFullName = Config.tmplClzFullName;
         tmplClzSimpleName = TypeUtil.getSimpleName(tmplClzFullName);

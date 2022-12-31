@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.UnmodifiableClassException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -174,22 +172,13 @@ public class InMemoryCompiler {
 
     /**
      * Get the class paths of a given class loader.
-     * <p>
-     * https://stackoverflow.com/questions/30412604/get-real-classpath-when-running-java-application-with-mvn-execjava
      */
     private static String getClassPath(ClassLoader cl) {
-        StringBuilder cp = new StringBuilder();
-        ClassLoader sys = ClassLoader.getSystemClassLoader();
-        for (; cl != null & cl != sys; cl = cl.getParent())
-            if (cl instanceof URLClassLoader) {
-                URLClassLoader ucl = (URLClassLoader) cl;
-                for (URL url : ucl.getURLs()) {
-                    Log.debug(url);
-                    cp.append(File.pathSeparator).append(url.getPath());
-                }
-            }
-        cp.append(":").append(getAgentJarFilePath());
-        return cp.length() == 0 ? null : cp.substring(1);
+        return getAgentJarFilePath() +
+               File.pathSeparator +
+               // TODO: could not get classpath at all cases but it
+               // should be fine for now.
+               System.getProperty("java.class.path");
     }
 
     /**
