@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +67,7 @@ public class Driver {
     private static Method argsMethod; // single @Arguments method
     private static String initialTmplSrcCode;
     private static ClassBytes initialTmplClassBytes;
-    private static Map<String, Map<String, Object>> initialFieldValues; // {class name, {field name, field value}}
+    private static Map<String, Map<String, Object>> immutableStaticFieldInitialValues; // {class name, {field name, field value}}
     private static Set<String> allClassNamesInTmpl; // including all nested classes
     private static Set<Class<?>> allClzes; // including all nested classes
     private static String tmplClzFullName;
@@ -355,15 +356,18 @@ public class Driver {
             throws IllegalAccessException, InvocationTargetException,
             NoSuchFieldException, CompilationException {
         if (Config.mimicExecution) {
-            checksum = new WrappedChecksum();
+            checksum = new WrappedChecksum(Config.ignoreJDKClasses);
         }
         int prevNHolesFilled = 0;
-        Map<String, Object> currFieldValues = new HashMap<>();
-        Object[] argsIncludingReceiver = execAndGetArgValues();
-        Object receiver = entryMethodIsStatic ? null : argsIncludingReceiver[0];
+        Object[] argsIncludingReceiverIfExists = execAndGetArgValues();
+        Object receiver = entryMethodIsStatic ? null : argsIncludingReceiverIfExists[0];
         Object[] args = entryMethodIsStatic ?
-                argsIncludingReceiver :
-                Arrays.copyOfRange(argsIncludingReceiver, 1, argsIncludingReceiver.length);
+                argsIncludingReceiverIfExists :
+                Arrays.copyOfRange(argsIncludingReceiverIfExists, 1, argsIncludingReceiverIfExists.length);
+        long initialState = hashState(receiver, args);
+        Set<Long> seenStates = new HashSet<>();
+        seenStates.add(initialState);
+        Log.debug("initial state: " + initialState);
         for (int i = 0; i < Config.nInvocations; i++) {
             Log.debug("# iteration " + (i + 1));
             if (Config.optHotFilling || Config.optSolverAid) {
@@ -385,12 +389,11 @@ public class Driver {
                     break;
                 }
 
-                // TODO: to also compare field values of nestetd
-                //  classes
-                if (Config.optStopEarly && TypeUtil.captureStatusAndEquals(
-                        tmplClz, initialFieldValues.get(tmplClzFullName).keySet(), currFieldValues)) {
-                    // We stop even earlier if we see a status that is
-                    // previously seen.
+                // TODO: static fields of all the classes in the world
+                Log.debug("# " + (i + 1) + " state: " + hashState(receiver, args));
+                if (Config.optStopEarly && !seenStates.add(hashState(receiver, args))) {
+                    // We stop even earlier if we see a status we have
+                    // seen.
                     break;
                 }
             }
@@ -408,6 +411,14 @@ public class Driver {
         if (Config.mimicExecution) {
             checksum.updateStaticFieldsOfClass(tmplClz);
         }
+    }
+
+    private static long hashState(Object receiver, Object[] args) {
+        WrappedChecksum cs = new WrappedChecksum(Config.ignoreJDKClasses);
+        allClzes.forEach(cs::updateStaticFieldsOfClass);
+        cs.update(receiver);
+        cs.update(args);
+        return cs.getValue();
     }
 
     /**
@@ -574,9 +585,9 @@ public class Driver {
     private static void saveInitialTmplStatus0() throws IllegalAccessException {
         // Save field values of every class defined from template source
         // file.
-        initialFieldValues = new HashMap<>();
+        immutableStaticFieldInitialValues = new HashMap<>();
         for (Class<?> clz : allClzes) {
-            initialFieldValues.put(clz.getName(), TypeUtil.captureImmutableStaticFieldValues(clz));
+            immutableStaticFieldInitialValues.put(clz.getName(), TypeUtil.captureImmutableStaticFieldValues(clz));
         }
     }
 
@@ -599,23 +610,16 @@ public class Driver {
             NoSuchMethodException, InvocationTargetException {
         // Restore values for the fields that were not initialized in
         // the static initializer.
-        for (Map.Entry<String, Object> e: initialFieldValues.get(clz.getName()).entrySet()) {
+        for (Map.Entry<String, Object> e: immutableStaticFieldInitialValues.get(clz.getName()).entrySet()) {
             String name = e.getKey();
             Object val = e.getValue();
             Field f = clz.getDeclaredField(name);
             f.setAccessible(true);
-            Class<?> fClz = f.getType();
-            if (org.csutil.util.TypeUtil.isImmutable(fClz)) {
-                // primitives or strings could be constants
-                // and not set in static initializer so we have to
-                // capture/restore their values manually.
-                // e.g., private static final int i = 10;
-                f.set(null, val);
-            } else {
-                // any reference other than strings would be set to
-                // null.
-                f.set(null, null);
-            }
+            // primitives or strings could be constants
+            // and not set in static initializer, so we have to
+            // capture/restore their values manually.
+            // e.g., private static final int i = 10;
+            f.set(null, val);
         }
 
         // Then we invoke copied static initializer method (if it

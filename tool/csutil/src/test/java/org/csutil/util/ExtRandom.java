@@ -12,7 +12,7 @@ public class ExtRandom extends Random {
     }
 
     public char nextChar() {
-        return (char) next(15); // non-negative
+        return (char) next(16); // non-negative
     }
 
     public short nextShort() {

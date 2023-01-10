@@ -292,7 +292,7 @@ public class OutputTransformer extends Transformer {
                 .append("N = Math.min(Integer.parseInt(args[0]), N);")
                 .append("}");
         // Initiate checksum instance
-        sb.append("WrappedChecksum cs = new WrappedChecksum();");
+        sb.append("WrappedChecksum cs = new WrappedChecksum(" + Config.ignoreJDKClasses + ");");
         // Create arguments for entry methods.
         String argVar = "eArg";
         String argsVar = "eArgs";

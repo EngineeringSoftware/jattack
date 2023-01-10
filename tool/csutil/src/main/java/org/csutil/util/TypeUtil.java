@@ -1,8 +1,11 @@
 package org.csutil.util;
 
+import org.csutil.log.Log;
+
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -49,66 +52,99 @@ public class TypeUtil {
             };
 
     /**
-     * Returns an array of all the fields, excluding the fields
+     * Returns a list of all the fields, excluding the fields
      * declared in the super class only if the super class should be
      * ignored.
      * <p>
      * Same as {@code getAllFields(clz, true)}
      * @param clz the class to get all the fields from
-     * @return the array of all the fields.
+     * @return a list of all the fields, excluding synthetic or static
+     * fields, any field that starts with "this*", or any field that
+     * are not allowed to access.
      */
-    public static Field[] getAllFields(final Class<?> clz) {
+    public static List<Field> getAllFields(final Class<?> clz) {
         return getAllFields(clz, true);
     }
 
     /**
-     * Returns an array of Field objects reflecting all the fields
+     * Returns a list of Field objects reflecting all the fields
      * declared by the class or interface represented by this Class
      * object and all of its superclasses. The returned array is
-     * sorted in a particular order, which is that primitives go first
-     * while both primitives or both non-primitives are sorted by the
-     * names.
+     * sorted in a particular order, where the fields declared by
+     * subclasses go first; for the fields declared by the same
+     * class primitives go first; both primitives or both references
+     * are sorted by the names.
+     * We ignore synthetic fields, any field that starts with
+     * "this$*", or any field that are not allowed to access.
+     * Borrowed some design from
+     * https://github.com/jdereg/java-util/blob/5c3a9775c11f7942f212bd0256ea4853169c846b/src/main/java/com/cedarsoftware/util/ReflectionUtils.java#L164
      * @param clz the Class object to get all the fields from
      * @param skipIgnoredSuperClasses if we skip collecting fields
      *                                from ignored super classes.
-     * @return the array of Field objects representing all the
-     * declared fields of this class and all of its superclasses.
+     * @return a list of Field objects representing all the declared
+     * fields of this class and all of its superclasses, excluding
+     * synthetic or static fields, any field that starts with "this*",
+     * or any field that are not allowed to access.
      */
-    public static Field[] getAllFields(final Class<?> clz, boolean skipIgnoredSuperClasses) {
-        List<Field> fields = new ArrayList<>(Arrays.asList(clz.getDeclaredFields()));
-        Class<?> parent = clz.getSuperclass();
-        while (parent != null) {
-            if (skipIgnoredSuperClasses && isIgnoredClass(parent)) {
+    public static List<Field> getAllFields(final Class<?> clz,
+                                           boolean skipIgnoredSuperClasses) {
+        List<Field> allFields = new ArrayList<>();
+        Class<?> currClz = clz;
+        while (currClz != null) {
+            if (skipIgnoredSuperClasses && isIgnoredClass(currClz)) {
                 break;
             }
-            fields.addAll(Arrays.asList(parent.getDeclaredFields()));
-            parent = parent.getSuperclass();
+            Field[] declaredFields = currClz.getDeclaredFields();
+            // Prune declared fields
+            List<Field> prunedDeclaredFields = new ArrayList<>();
+            for (Field field : declaredFields) {
+                if (field.isSynthetic()
+                    || field.getName().startsWith("this$")
+                    || Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                try {
+                    field.setAccessible(true);
+                } catch (InaccessibleObjectException | SecurityException ignored) {
+                    // ignore the field if it is not allowed to access
+                    Log.debug(ignored);
+                    Log.debug("Ignore field " + field);
+                    continue;
+                }
+                prunedDeclaredFields.add(field);
+            }
+            // Sort declared fields
+            prunedDeclaredFields.sort((f1, f2) -> {
+                boolean isf1Primitive = f1.getType().isPrimitive();
+                boolean isf2Primitive = f2.getType().isPrimitive();
+                if (isf1Primitive && !isf2Primitive) {
+                    return -1;
+                }
+                if (!isf1Primitive && isf2Primitive) {
+                    return 1;
+                }
+                return f1.getName().compareTo(f2.getName());
+            });
+
+            // Add to the collection
+            allFields.addAll(prunedDeclaredFields);
+            currClz = currClz.getSuperclass();
         }
-        Field[] fieldsArr = fields.toArray(new Field[0]);
-        Arrays.sort(fieldsArr, (f1, f2) -> {
-            boolean isf1Primitive = f1.getType().isPrimitive();
-            boolean isf2Primitive = f2.getType().isPrimitive();
-            if (isf1Primitive && !isf2Primitive) {
-                return -1;
-            }
-            if (!isf1Primitive && isf2Primitive) {
-                return 1;
-            }
-            return f1.getName().compareTo(f2.getName());
-        });
-        return fieldsArr;
+        return allFields;
     }
 
     /**
      * Returns whether the given {@code clz} is one of the container
-     * types: array, {@link Collection} and {@link Map}.
+     * types: array, {@link Collection}, {@link Map} and
+     * {@link Map.Entry}.
      * @param clz the class to query.
      * @return true if the given {@code clz} is a container
      */
     public static boolean isContainer(final Class<?> clz) {
         return clz.isArray()
-                || Collection.class.isAssignableFrom(clz)
-                || Map.class.isAssignableFrom(clz);
+               || Collection.class.isAssignableFrom(clz)
+               || Map.class.isAssignableFrom(clz)
+               || Map.Entry.class.isAssignableFrom(clz);
     }
 
     /**

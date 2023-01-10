@@ -19,7 +19,7 @@ public class Log {
         }
     }
 
-    private static final String MSG_PREFIX = "Sketchy:";
+    private static final String MSG_PREFIX = "CSUTIL:";
 
     private static Level level = Level.ERROR;
 

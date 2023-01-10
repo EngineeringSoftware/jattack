@@ -23,6 +23,10 @@ LOG_DIR = DOT_DIR / "logs"
 
 JATTACK_JAR = _DIR / "jattack-all.jar"
 
+JAVA_OPTS = [
+    "--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+]
+
 # Set up logging
 su.io.mkdir(LOG_DIR, parents=True)
 log_file = Path(LOG_DIR / f"{time.time_ns()}.log")
@@ -231,7 +235,8 @@ def exceute_and_test(
             opts= " ".join(je.java_opts)
             output_file = output_dir_per_gen / f"java_env{je_i}.txt"
             res = bash_run(
-                f"{java} -cp {cp}"
+                f"{java} -cp {cp}" +\
+                " " + " ".join(JAVA_OPTS) +\
                 f" {opts}"
                 f" -XX:ErrorFile={output_dir_per_gen}/he_err_pid%p.log"
                 f" -XX:ReplayDataFile={output_dir_per_gen}/replay_pid%p.log"
@@ -307,6 +312,7 @@ def generate(
     try:
         res = bash_run(
             f"{java} -javaagent:{jattack_jar} -cp {tmpl_classpath}" +\
+            " " + " ".join(JAVA_OPTS) +\
             " " + " ".join(extra_java_opts) +\
             f" jattack.driver.Driver"
             f" --clzName={clz}"

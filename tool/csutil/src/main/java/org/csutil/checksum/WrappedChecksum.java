@@ -7,37 +7,53 @@ import org.csutil.util.TypeUtil;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 /**
  * Wrapped Checksum class that support hash any type.
+ * NOTE: @{code null} is hashed as the same as {@code "null"};
+ *      all NaN of double is hashed as the same as the canonical one
+ *      {@link Double#NaN);
+ *      all NaN of float is hashed as the same as the canonical one
+ *      {@link Float#NaN}.
  */
 public class WrappedChecksum {
 
-    // An Adler-32 checksum is almost as reliable as a CRC-32 but can
-    // be computed much faster. We can consider using Adler32 instead.
-    private final CRC32 checksum;
-
-    /**
-     * Whether we exclude Collection and Map in checksum.
-     */
-    private final boolean skipCollectionAndMap;
-
-    public WrappedChecksum() {
-        this(true);
-    }
+    private final Checksum checksum;
+    private final boolean ignoreJavaClasses;
 
     /**
      * Constructor.
      */
-    public WrappedChecksum(boolean skipCollectionAndMap) {
-        checksum = new CRC32();
-        this.skipCollectionAndMap = skipCollectionAndMap;
+    public WrappedChecksum() {
+        this(false);
+    }
+
+    public WrappedChecksum(boolean ignoreJavaClasses) {
+        checksum = newChecksum();
+        this.ignoreJavaClasses = ignoreJavaClasses;
+    }
+
+    /**
+     * Factory to produce a new {@link Checksum} instance.
+     * @return a new {@link Checksum} instance.
+     */
+    public static Checksum newChecksum() {
+        // An Adler-32 checksum is almost as reliable as a CRC-32 but
+        // can be computed much faster. We can consider using Adler32
+        // instead.
+        return new CRC32();
     }
 
     /**
@@ -46,6 +62,18 @@ public class WrappedChecksum {
      */
     public long getValue() {
         return checksum.getValue();
+    }
+
+    /**
+     * Returns whether the checksum ignores java stand library classes
+     * and some other classes, as defined in
+     * {@link TypeUtil#isIgnoredClass(Class)}.
+     * @return true if the checksum ignores java stand library classes
+     *         and some other classes, as defined in
+     *         {@link TypeUtil#isIgnoredClass(Class)}.
+     */
+    public boolean isIgnoreJavaClasses() {
+        return ignoreJavaClasses;
     }
 
     /**
@@ -61,6 +89,10 @@ public class WrappedChecksum {
      * @param value the boolean to update the checksum with
      */
     public void update(boolean value) {
+        updateBoolean(value, checksum);
+    }
+
+    private static void updateBoolean(boolean value, Checksum checksum) {
         Log.debug("Checksum boolean " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -70,6 +102,10 @@ public class WrappedChecksum {
      * @param value the byte to update the checksum with
      */
     public void update(byte value) {
+        updateByte(value, checksum);
+    }
+
+    private static void updateByte(byte value, Checksum checksum) {
         Log.debug("Checksum byte " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -79,6 +115,10 @@ public class WrappedChecksum {
      * @param value the char to update the checksum with
      */
     public void update(char value) {
+        updateChar(value, checksum);
+    }
+
+    private static void updateChar(char value, Checksum checksum) {
         Log.debug("Checksum char " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -88,6 +128,10 @@ public class WrappedChecksum {
      * @param value the double to update the checksum with
      */
     public void update(double value) {
+        updateDouble(value, checksum);
+    }
+
+    private static void updateDouble(double value, Checksum checksum) {
         Log.debug("Checksum double " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -97,6 +141,10 @@ public class WrappedChecksum {
      * @param value the float to update the checksum with
      */
     public void update(float value) {
+        updateFloat(value, checksum);
+    }
+
+    private static void updateFloat(float value, Checksum checksum) {
         Log.debug("Checksum float " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -106,6 +154,10 @@ public class WrappedChecksum {
      * @param value the integer to update the checksum with
      */
     public void update(int value) {
+        updateInt(value, checksum);
+    }
+
+    private static void updateInt(int value, Checksum checksum) {
         Log.debug("Checksum int " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -115,6 +167,10 @@ public class WrappedChecksum {
      * @param value the long to update the checksum with
      */
     public void update(long value) {
+        updateLong(value, checksum);
+    }
+
+    private static void updateLong(long value, Checksum checksum) {
         Log.debug("Checksum long " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
@@ -124,60 +180,268 @@ public class WrappedChecksum {
      * @param value the short to update the checksum with
      */
     public void update(short value) {
+        updateShort(value, checksum);
+    }
+
+    private static void updateShort(short value, Checksum checksum) {
         Log.debug("Checksum short " + value);
         checksum.update(ByteBufferUtil.toByteBuffer(value));
     }
 
     /**
      * Update the current checksum with the given object.
-     * @param obj the object to update the checksum with
+     * @param object the object to update the checksum with
      */
-    public void update(Object obj) {
-        if (obj == null) {
-            updateNull();
+    public void update(Object object) {
+        updateObject(object, checksum, ignoreJavaClasses);
+    }
+
+    private static void updateObject(
+            Object object,
+            Checksum checksum,
+            boolean ignoreJavaClasses) {
+        // We allow revisiting the same primitives and strings
+        // but not containers or other objects.
+        if (isNullOrBoxedPrimitiveOrString(object)) {
+            updateNullOrBoxedPrimitivesOrString(object, checksum);
             return;
         }
+        // other objects
+        // objects to be used to update the checksum, containing only
+        // objects that are not (boxed) primitives or strings
+        Deque<ObjectWithHash> stack = new ArrayDeque<>();
+        // objects that have been visited
+        Set<ObjectWithHash> visited = new HashSet<>();
+        // Mapping from Objects to a unique id since hashcode varies
+        // across runs.
+        Map<ObjectWithHash, Integer> idsByObj = new HashMap<>();
+        pushObjectOntoStack(stack, visited, idsByObj, object, checksum, ignoreJavaClasses);
 
-        Class<?> clz = obj.getClass();
-        if (clz.isPrimitive() || TypeUtil.isBoxedPrimitive(clz)) {
-            // Boxed primitives
-            updateBoxedPrimitive(obj);
-        } else if (TypeUtil.isString(clz)) {
-            updateString((String) obj);
-        } else if (TypeUtil.isContainer(clz)) {
-            updateContainer(obj);
-        } else {
-            if (!TypeUtil.isIgnoredClass(clz)) {
-                // Other reference types
-                updateObject(obj);
+        // Checksum we are currently using
+        Deque<ChecksumStackLevel> checksumStack = new ArrayDeque<>();
+        checksumStack.push(new ChecksumStackLevel(checksum, idsByObj, null));
+
+        while (!stack.isEmpty()) {
+            ObjectWithHash objWH = stack.peek();
+            Object obj = objWH.obj;
+            ChecksumStackLevel currChecksumStackLevel = checksumStack.peek();
+            Checksum currChecksum = currChecksumStackLevel.checksum;
+            Map<ObjectWithHash, Integer> currIdsByObj = currChecksumStackLevel.idsByObj;
+            if (isNullOrBoxedPrimitiveOrString(obj)) {
+                updateNullOrBoxedPrimitivesOrString(obj, currChecksum);
+                if (objWH.isElementOfUnorderedContainer) {
+                    ChecksumStackLevel checksumStackLevel = checksumStack.pop();
+                    // add hash to sum of enclosing container
+                    Log.debug("Save the hash of element into sum");
+                    checksumStackLevel.containerLevel.incSum(checksumStackLevel.getValue());
+                }
+                stack.pop();
+                continue;
+            }
+            if (visited.contains(objWH)) {
+                if (objWH.secondSeen) {
+                    // We just need to encode the edge but should not
+                    // explore the object anymore
+                    updateObjectToObjectEdge(currIdsByObj, objWH, currChecksum);
+                    Log.debug("Second seen " + objWH.obj.getClass().getName());
+                    stack.pop();
+                    continue;
+                }
+                // Seeing an object again means we finished work on
+                // the object
+                if (objWH.isUnorderedContainer) {
+                    // update checksum with the sum of independent
+                    // hash of each element in the container
+                    Log.debug("Update checksum with sum");
+                    currChecksumStackLevel.updateChecksumWithSum();
+                }
+                if (objWH.isElementOfUnorderedContainer) {
+                    ChecksumStackLevel checksumStackLevel = checksumStack.pop();
+                    // add hash to sum of enclosing container
+                    Log.debug("Save the hash of element into sum");
+                    checksumStackLevel.containerLevel.incSum(checksumStackLevel.getValue());
+                }
+                stack.pop();
+                continue;
+            }
+            // update the checksum with the edge
+            updateObjectToObjectEdge(currIdsByObj, objWH, currChecksum);
+            // mark visited
+            visited.add(objWH);
+            if (isContainer(obj)) {
+                updateContainer(stack, visited, currIdsByObj,
+                                checksumStack, objWH, currChecksum,
+                                ignoreJavaClasses);
+            } else {
+                updateOtherObject(stack, visited, currIdsByObj, objWH,
+                                  currChecksum, ignoreJavaClasses);
             }
         }
     }
 
     /**
-     * Update the current checksum with the given container object.
-     * @param obj the container object to update the checksum with
+     * Push the given object onto the given stack.
+     * @param stack the stack to store all the objects to update
+     *              the checksum with
+     * @param visited the set of objects that have been used to update
+     *                the checksum with
+     * @param obj the object to update the checksum with
      */
-    private void updateContainer(Object obj) {
-        Class<?> clz = obj.getClass();
-        if (obj.getClass().isArray()) {
-            for (int i = 0; i < Array.getLength(obj); ++i) {
-                update(Array.get(obj, i));
+    private static void pushObjectOntoStack(Deque<ObjectWithHash> stack,
+                                            Set<ObjectWithHash> visited,
+                                            Map<ObjectWithHash, Integer> idsByObj,
+                                            Object obj,
+                                            Checksum checksum,
+                                            boolean ignoreJavaClasses) {
+        pushObjectOntoStack(stack, visited, idsByObj, obj, checksum, ignoreJavaClasses, false);
+    }
+
+    private static void pushObjectOntoStack(Deque<ObjectWithHash> stack,
+                                            Set<ObjectWithHash> visited,
+                                            Map<ObjectWithHash, Integer> idsByObj,
+                                            Object obj,
+                                            Checksum checksum,
+                                            boolean ignoreJavaClasses,
+                                            boolean isElementOfUnorderedContainer) {
+        if (isNullOrBoxedPrimitiveOrString(obj)) {
+            stack.push(new ObjectWithHash(obj, isElementOfUnorderedContainer));
+            return;
+        }
+        ObjectWithHash objWH = new ObjectWithHash(obj, isElementOfUnorderedContainer);
+        if (ignoreJavaClasses && isIgnored(obj)) {
+            // add edge now because we did not have a chance to encode
+            // the edge into checksum later
+            updateObjectToObjectEdge(idsByObj, objWH, checksum);
+            // Avoid visiting one of the ignored types
+            Log.debug("Ignore " + obj.getClass().getName());
+            return;
+        }
+        // other objects, including containers
+        if (visited.contains(objWH)) {
+            // Set a special flag that indicates we want to encode the
+            // edge into checksum.
+            objWH.secondSeen = true;
+        }
+        // Set flag
+        objWH.isUnorderedContainer = isUnorderedContainer(obj);
+        stack.push(objWH);
+    }
+
+    /**
+     * Update the current checksum with the given container object.
+     * @param stack the stack to store all the objects to update
+     *              the checksum with
+     * @param visited the set of objects that have been used to update
+     *                the checksum with
+     * @param objWH the container object to update the checksum with
+     */
+    private static void updateContainer(Deque<ObjectWithHash> stack,
+                                        Set<ObjectWithHash> visited,
+                                        Map<ObjectWithHash, Integer> idsByObj,
+                                        Deque<ChecksumStackLevel> checksumStack,
+                                        ObjectWithHash objWH,
+                                        Checksum checksum,
+                                        boolean ignoreJavaClasses) {
+        Object container = objWH.obj;
+        // Array
+        if (container.getClass().isArray()) {
+            Log.debug("Checksum array " + container.getClass().getName());
+            // We reverse the order of elements when pushing onto
+            // the stack
+            LinkedList<Object> revStack = new LinkedList<>();
+            for (int i = 0; i < Array.getLength(container); ++i) {
+                Object e = Array.get(container, i);
+                revStack.push(e);
+            }
+            while (!revStack.isEmpty()) {
+                Object elem = revStack.pop();
+                pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
             }
         }
-        if (!skipCollectionAndMap) {
-            if (obj instanceof Collection) {
-                for (Object e : (Collection) obj) {
-                    update(e);
+        // Collection
+        if (container instanceof Collection) {
+            if (container instanceof Set && !(container instanceof SortedSet)) {
+                Log.debug("Checksum unordered collection " + container.getClass().getName());
+                // We do not update the running checksum because
+                // the iterative order is undefined and could vary
+                // between different JDK implementations. Thus,
+                // we compute independent checksum for each
+                // element and simply sum all of them to avoid
+                // being affected by the undefined iterative
+                // order.
+                ChecksumStackLevel containerLevel = checksumStack.peek();
+                for (Object e : (Collection<?>) container) {
+                    pushObjectOntoStack(stack, visited, idsByObj, e, checksum, ignoreJavaClasses, true);
+                    // push a new checksum stack level for each element
+                    // because we want to independently compute hash
+                    // of each element
+                    checksumStack.push(new ChecksumStackLevel(containerLevel));
                 }
+                return;
             }
-            if (obj instanceof Map) {
-                for (Object e : ((Map) obj).entrySet()) {
-                    update(((Map.Entry) e).getKey());
-                    update(((Map.Entry) e).getValue());
-                }
+            Log.debug("Checksum ordered collection " + container.getClass().getName());
+            // Ordered collection
+            // We use another stack to reverse the collection
+            // we use linkedlist because linkedlist supports null
+            LinkedList<Object> revStack = new LinkedList<>();
+            for (Object e : (Collection<?>) container) {
+                revStack.push(e);
+            }
+            while (!revStack.isEmpty()) {
+                Object elem = revStack.pop();
+                pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
             }
         }
+        // Map
+        if (container instanceof Map) {
+            if (!(container instanceof SortedMap)) {
+                Log.debug("Checksum unordered map " + container.getClass().getName());
+                // We do not update the running checksum because
+                // the iterative order is undefined and could vary
+                // between different JDK implementations. Thus,
+                // we compute independent checksum for each
+                // element and simply sum all of them to avoid
+                // being affected by the undefined iterative
+                // order.
+                ChecksumStackLevel containerLevel = checksumStack.peek();
+                for (Map.Entry<?, ?> e : ((Map<?, ?>) container).entrySet()) {
+                    pushObjectOntoStack(stack, visited, idsByObj, e, checksum, ignoreJavaClasses, true);
+                    // push a new checksum stack level for each element
+                    // because we want to independently compute hash
+                    // of each element
+                    checksumStack.push(new ChecksumStackLevel(containerLevel));
+                }
+                return;
+            }
+            Log.debug("Checksum ordered map " + container.getClass().getName());
+            // Ordered map
+            // We use another stack to reverse the collection
+            // we use linkedlist because linkedlist supports null
+            LinkedList<Object> revStack = new LinkedList<>();
+            for (Map.Entry<?, ?> e : ((Map<?, ?>) container).entrySet()) {
+                revStack.push(e);
+            }
+            while (!revStack.isEmpty()) {
+                Object elem = revStack.pop();
+                pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
+            }
+        }
+        if (container instanceof Map.Entry) {
+            updateMapEntry(stack, visited, idsByObj, objWH, checksum, ignoreJavaClasses);
+        }
+    }
+
+    private static void updateMapEntry(Deque<ObjectWithHash> stack,
+                                       Set<ObjectWithHash> visited,
+                                       Map<ObjectWithHash, Integer> idsByObj,
+                                       ObjectWithHash objWH,
+                                       Checksum checksum,
+                                       boolean ignoreJavaClasses) {
+        Map.Entry<?, ?> entry = (Map.Entry<?, ?>) objWH.obj;
+        Log.debug("Checksum map entry " + entry.getClass().getName());
+        // We push value then key, so key goes first when popped out
+        pushObjectOntoStack(stack, visited, idsByObj, entry.getValue(), checksum, ignoreJavaClasses);
+        pushObjectOntoStack(stack, visited, idsByObj, entry.getKey(), checksum, ignoreJavaClasses);
     }
 
     /**
@@ -185,127 +449,82 @@ public class WrappedChecksum {
      * a boxed primitive or a String or a container.
      * <p>
      * We essentially encode the shape of the object graph. For any
-     * primitive or boxed primitive field, we update the current
-     * checksum with the value of the field. For any object in the
-     * graph, we set a unique id along a DFS and update the checksum
-     * with the unique id.
-     * @param obj the object to update the checksum with
+     * primitive or boxed primitive field or string, we update the
+     * current checksum with the value of the field. For any object in
+     * the graph, we set a unique id along a DFS and update the
+     * checksum with the unique id.
+     * @param objWH the object to update the checksum with
      */
-    private void updateObject(Object obj) {
-        // Set of hashcode of objects we update the checksum with
-        Set<Integer> visited = new HashSet<>();
-        // Mapping from hashcode of objects to a unique id since
-        // hashcode varies across runs.
-        Map<Integer, Integer> idsByObj = new HashMap<>();
-        idsByObj.put(System.identityHashCode(obj), idsByObj.size());
-        updateObject(obj, visited, idsByObj);
-    }
-
-    private void updateObject(
-            Object obj,
-            Set<Integer> checksumed,
-            Map<Integer, Integer> idsByObj) {
-        int hashcode = System.identityHashCode(obj);
-        if (checksumed.contains(hashcode)) {
-            // Avoid revisiting a checksumed object
-            return;
-        }
-        checksumed.add(hashcode); // Mark visited
+    private static void updateOtherObject(Deque<ObjectWithHash> stack,
+                                          Set<ObjectWithHash> visited,
+                                          Map<ObjectWithHash, Integer> idsByObj,
+                                          ObjectWithHash objWH,
+                                          Checksum checksum,
+                                          boolean ignoreJavaClasses) {
+        Object obj = objWH.obj;
+        Class<?> clz = obj.getClass();
+        Log.debug("Checksum object " + idsByObj.get(objWH) + " " + clz.getName());
 
         // Checksum every and each field
-        Class<?> clz = obj.getClass();
-        Log.debug("Start checksuming object " + clz.getName());
-        for (Field field : TypeUtil.getAllFields(clz)) {
+        // We reverse the order of fields before pushing onto the stack
+        // We use another stack to reverse the collection
+        // we use linkedlist because linkedlist supports null
+        LinkedList<Object> revStack = new LinkedList<>();
+        for (Field field : TypeUtil.getAllFields(clz, ignoreJavaClasses)) {
             if (field.isSynthetic()) {
                 continue; // skip synthetic field is a good habit
             }
             field.setAccessible(true);
             try {
-                Log.debug("Start checksuming field " + clz.getName() + ":" + field.getName());
-                Object fieldVal = field.get(obj);
-                updateField(fieldVal, checksumed, idsByObj);
-                Log.debug("End checksuming field " + clz.getName() + ":" + field.getName());
+                Object fieldObj = field.get(obj);
+                revStack.push(fieldObj);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
-        Log.debug("End checksuming object " + clz.getName());
+        while (!revStack.isEmpty()) {
+            Object elem = revStack.pop();
+            pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
+        }
     }
 
     /**
-     * Update the current checksum with the given field.
+     * Update the checksum with the edge between two objects if the
+     * object is not (boxed) primitive or string.
      */
-    private void updateField(
-            Object obj,
-            Set<Integer> checksumed,
-            Map<Integer, Integer> idsByObj) {
+    private static void updateObjectToObjectEdge(Map<ObjectWithHash, Integer> idsByObj, ObjectWithHash objWH, Checksum checksum) {
+        int uid = idsByObj.getOrDefault(objWH, idsByObj.size());
+        idsByObj.putIfAbsent(objWH, uid);
+        // TODO: could hash more than uid?
+        Log.debug("Checksum object to object edge: to object " + uid + " " + objWH.obj.getClass().getName());
+        updateInt(uid, checksum);
+    }
+
+    private static void updateNullOrBoxedPrimitivesOrString(Object obj, Checksum checksum) {
         if (obj == null) {
-            updateNull();
+            updateNull(checksum);
             return;
         }
         Class<?> clz = obj.getClass();
-        if (clz.isPrimitive() || TypeUtil.isBoxedPrimitive(clz)) {
-            updateBoxedPrimitive(obj);
+        if (TypeUtil.isBoxedPrimitive(clz)) {
+            updateBoxedPrimitive(obj, checksum);
         } else if (TypeUtil.isString(clz)) {
-            updateString((String) obj);
-        } else if (TypeUtil.isContainer(clz)) {
-            updateContainerAsField(obj, checksumed, idsByObj);
+            updateString((String) obj, checksum);
         } else {
-            // Update the checksum with the unique id of this
-            // adjacent object field
-            int adjHashcode = System.identityHashCode(obj);
-            // Get the unique id for this adjacent object field
-            int adjUniqId = idsByObj.getOrDefault(adjHashcode, idsByObj.size());
-            // Put (hashcode, uniqueId) pair into map
-            idsByObj.putIfAbsent(adjHashcode, adjUniqId);
-            // Update the checksum with the unique id
-            update(adjUniqId);
-            // Update the checksum with the adjacent object value
-            // only when the field is not of ignored type
-            if (!TypeUtil.isIgnoredClass(clz)) {
-                // DFS traversal
-                updateObject(obj, checksumed, idsByObj);
-            } else {
-                Log.debug("Ignore " + clz.getName());
-            }
-        }
-    }
-
-    // TODO: merge into updateContainer(Object)
-    private void updateContainerAsField(
-            Object obj,
-            Set<Integer> checksumed,
-            Map<Integer, Integer> idsByObj) {
-        if (obj.getClass().isArray()) {
-            Log.debug("Start checksuming array " + obj.getClass().getName());
-            for (int i = 0; i < Array.getLength(obj); ++i) {
-                updateField(Array.get(obj, i), checksumed, idsByObj);
-            }
-            Log.debug("End checksuming array " + obj.getClass().getName());
-        }
-        if (!skipCollectionAndMap) {
-            if (obj instanceof Collection) {
-                for (Object e : (Collection) obj) {
-                    updateField(e, checksumed, idsByObj);
-                }
-            }
-            if (obj instanceof Map) {
-                for (Object e : ((Map) obj).entrySet()) {
-                    updateField(((Map.Entry) e).getKey(), checksumed, idsByObj);
-                    updateField(((Map.Entry) e).getValue(), checksumed, idsByObj);
-                }
-            }
+            throw new RuntimeException(
+                    "Unexpected type: " + clz.getName());
         }
     }
 
     /**
      * Update the current checksum with the given {@link String}.
      * @param str the {@link String} to update the checksum with
+     * @param checksum
      */
-    private void updateString(String str) {
+    private static void updateString(String str, Checksum checksum) {
         Log.debug("Checksum String " + str);
         for (char c : str.toCharArray()) {
-            update(c);
+            updateChar(c, checksum);
         }
     }
 
@@ -313,62 +532,103 @@ public class WrappedChecksum {
      * Update the current checksum with the given boxed primitive.
      * @param obj the boxed primitive to update the checksum
      *            with
+     * @param checksum
      */
-    private void updateBoxedPrimitive(Object obj) {
+    private static void updateBoxedPrimitive(Object obj, Checksum checksum) {
         String className = obj.getClass().getCanonicalName();
         switch (className) {
         case "java.lang.Boolean": {
-            boolean value = ((Boolean) obj).booleanValue();
-            update(value);
+            boolean value = (Boolean) obj;
+            updateBoolean(value, checksum);
             break;
         }
         case "java.lang.Byte": {
-            byte value = ((Byte) obj).byteValue();
-            update(value);
+            byte value = (Byte) obj;
+            updateByte(value, checksum);
             break;
         }
         case "java.lang.Character": {
-            char value = ((Character) obj).charValue();
-            update(value);
+            char value = (Character) obj;
+            updateChar(value, checksum);
             break;
         }
         case "java.lang.Double": {
-            double value = ((Double) obj).doubleValue();
-            update(value);
+            double value = (Double) obj;
+            updateDouble(value, checksum);
             break;
         }
         case "java.lang.Float": {
-            float value = ((Float) obj).floatValue();
-            update(value);
+            float value = (Float) obj;
+            updateFloat(value, checksum);
             break;
         }
         case "java.lang.Integer": {
-            int value = ((Integer) obj).intValue();
-            update(value);
+            int value = (Integer) obj;
+            updateInt(value, checksum);
             break;
         }
         case "java.lang.Long": {
-            long value = ((Long) obj).longValue();
-            update(value);
+            long value = (Long) obj;
+            updateLong(value, checksum);
             break;
         }
         case "java.lang.Short": {
-            short value = ((Short) obj).shortValue();
-            update(value);
+            short value = (Short) obj;
+            updateShort(value, checksum);
             break;
         }
         default:
-            throw new RuntimeException("Unexpected boxed types: " +
-                    className + "!");
+            throw new RuntimeException(
+                    "Expected a boxed primitive type but found " + className);
         }
     }
 
     /**
      * Update the current checksum with null.
+     * @param checksum
      */
-    private void updateNull() {
+    private static void updateNull(Checksum checksum) {
         Log.debug("Checksum NULL");
-        updateString("null");
+        updateString("null", checksum);
+    }
+
+    /**
+     * Returns whether the given {@code obj} is {@code null}, or a
+     * (boxed) primitive or string.
+     * @param obj the object to query
+     * @return true if the given {@code obj} is {@code null}, or a
+     *         (boxed) primitive or string
+     */
+    private static boolean isNullOrBoxedPrimitiveOrString(Object obj) {
+        return obj == null || TypeUtil.isImmutable(obj.getClass());
+    }
+
+    /**
+     * Returns whether the given {@code obj} is one of the container
+     * types: array, {@link Collection}, {@link Map} and
+     * {@link Map.Entry}.
+     * @param obj the object to query
+     * @return true if the given {@code obj} is a container
+     */
+    private static boolean isContainer(Object obj) {
+        return TypeUtil.isContainer(obj.getClass());
+    }
+
+    private static boolean isUnorderedContainer(Object obj) {
+        return (obj instanceof Set && !(obj instanceof SortedSet))
+                || (obj instanceof Map && !(obj instanceof SortedMap));
+    }
+
+    /**
+     * Returns whether the given {@code obj} should be ignored, i.e.,
+     * it is not a container class and is one of the ignored classes,
+     * as defined in {@link TypeUtil#isIgnoredClass(Class)}.
+     * @param obj the object to query
+     * @return true if the given {@code obj} should be ignored
+     */
+    private static boolean isIgnored(Object obj) {
+        Class<?> clz = obj.getClass();
+        return !TypeUtil.isContainer(clz) && TypeUtil.isIgnoredClass(clz);
     }
 
     /**
@@ -384,11 +644,78 @@ public class WrappedChecksum {
                 // checksum.
                 field.setAccessible(true);
                 try {
+                    Log.debug("checksum static field " + field);
                     update(field.get(null));
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
             }
+        }
+    }
+
+    private static final class ObjectWithHash {
+        private final Object obj;
+        private final int hash;
+        private boolean secondSeen;
+        private final boolean isElementOfUnorderedContainer;
+        private boolean isUnorderedContainer;
+
+        private ObjectWithHash(
+                Object object,
+                boolean isElementOfUnorderedContainer) {
+            obj = object;
+            hash = System.identityHashCode(obj);
+            this.isElementOfUnorderedContainer = isElementOfUnorderedContainer;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ObjectWithHash that = (ObjectWithHash) o;
+            return hash == that.hash;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+    }
+
+    private static class ChecksumStackLevel {
+        private Checksum checksum;
+        private long sum;
+        private ChecksumStackLevel containerLevel; // null means it is outermost
+        private Map<ObjectWithHash, Integer> idsByObj;
+
+        private ChecksumStackLevel(ChecksumStackLevel containerLevel) {
+            this(WrappedChecksum.newChecksum(), new HashMap<>(), containerLevel);
+        }
+
+        private ChecksumStackLevel(
+                Checksum checksum,
+                Map<ObjectWithHash, Integer> idsByObj,
+                ChecksumStackLevel containerLevel) {
+            this.checksum = checksum;
+            this.idsByObj = idsByObj;
+            this.containerLevel = containerLevel;
+            this.sum = 0L;
+        }
+
+        private void incSum(long hash) {
+            this.sum += hash;
+        }
+
+        private void updateChecksumWithSum() {
+            updateLong(sum, checksum);
+        }
+
+        private long getValue() {
+            return checksum.getValue();
         }
     }
 }

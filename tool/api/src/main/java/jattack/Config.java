@@ -118,6 +118,12 @@ public class Config {
      */
     public static boolean allowNonCompilableOutput = false;
 
+    /**
+     * Determine if we allow non-compilable generated programs
+     * outputted.
+     */
+    public static boolean ignoreJDKClasses = false;
+
     /*----------- Optimization technique on/off flags. -------------*/
 
     /**

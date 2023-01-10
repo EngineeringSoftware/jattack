@@ -196,6 +196,7 @@ public class Cli {
         case "debug": {
             if (value.isEmpty() || Boolean.parseBoolean(value)) {
                 Log.setLevel("debug");
+                org.csutil.log.Log.setLevel("debug");
             }
             break;
         }
@@ -255,9 +256,14 @@ public class Cli {
             Config.trackHolesFile = value;
             break;
         }
-        case "mimicExecution":
+        case "mimicExecution": {
             Config.mimicExecution = value.isEmpty() || Boolean.parseBoolean(value);
             break;
+        }
+        case "ignoreJDKClasses": {
+            Config.ignoreJDKClasses = value.isEmpty() || Boolean.parseBoolean(value);
+            break;
+        }
         default:
             throw new RuntimeException("Unrecognized option: " + key);
         }
