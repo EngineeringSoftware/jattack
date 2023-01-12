@@ -174,6 +174,24 @@ public class TypeUtil {
     }
 
     /**
+     * Get the values of all the static fields of mutable reference
+     * type for the given class.
+     */
+    public static Set<String> getMutableStaticFieldNames(Class<?> clz) {
+        Set<String> fieldNames = new HashSet<>();
+        for (Field field : clz.getDeclaredFields()) {
+            int modifiers = field.getModifiers();
+            if (!Modifier.isStatic(modifiers)) {
+                continue;
+            }
+            if (!org.csutil.util.TypeUtil.isImmutable(field.getType())) {
+                fieldNames.add(field.getName());
+            }
+        }
+        return fieldNames;
+    }
+
+    /**
      * Get the values of the specified static fields of the given
      * class.
      */

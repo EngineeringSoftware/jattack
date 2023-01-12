@@ -11,50 +11,54 @@ import jattack.exception.InvokedFromNotDriverException;
 public class SkTestStaticFieldResetForNestedClass {
 
     private static class C {
-        private final static int finalArr[] = {0, 0, 0};
-        private static int arr[] = {0, 0, 0};
-        private final static int finalI = 1;
-        private final static String finalS = "foo";
-        private static int i = 1;
-        private static long l;
-        private static String s;
+        private final static int primFinal = 1;
+        private static int primWithInit = 1;
+        private static long primWOInit;
+
+        private final static String strFinal = "foo";
+        private static String strWithInit = "foo";
+        private static String strWOInit;
+
+        private final static int[] finalArr = {0, 0, 0};
+        private static int[] arrWithInit = {0, 0, 0};
+        private static int[] arrWOInitializer;
     }
 
     /**
-     * During generating the first program, arr[1] will be set to a
-     * non-zero number; if the field arr is not correctly reset, then
-     * the following generated programs will not have the first hole
-     * filled. However, when executing those generated programs, the
-     * first hole will be reached and executed and we will see an
-     * InvokedFromDriver exception.
-     * For final fields, we directly check if the value is changed; if
-     * so we explicitly throw exceptions.
-     * Similarly, we check if the reset mechanism work well for final
-     * fields and primitive fields, with initialized values and
-     * without initialized values.
+     * Same logic as {@link SkTestStaticFieldReset#m()}.
      */
     @Entry
     public static void m() {
-        if (C.arr[1] == 0) {
-            C.arr[1] = intVal(5, 10).eval();
+        // update static fields
+        if (C.primWithInit == 1) {
+            C.primWithInit = intVal(5, 10).eval();
+        }
+        if (C.primWOInit == 0) {
+            C.primWOInit = longVal(10L, 20L).eval();
+        }
+        String hello = "hello";
+        if (C.strWithInit.equals("foo")) {
+            C.strWithInit = refId(String.class, "hello").eval();
+        }
+        if (C.strWOInit == null) {
+            C.strWOInit = refId(String.class, "hello").eval();
+        }
+        if (C.arrWithInit[1] == 0) {
+            C.arrWithInit[1] = intVal(5, 10).eval();
+        }
+        if (C.arrWOInitializer == null) {
+            int[] a = {5, 6, 7};
+            C.arrWOInitializer = intArrId("a").eval();
         }
         if (C.finalArr[1] == 0) {
             C.finalArr[1] = intVal(5, 10).eval();
         }
-        if (C.i == 1) {
-            C.i = intVal(5, 10).eval();
-        }
-        if (C.l == 0) {
-            C.l = longVal(10L, 20L).eval();
-        }
-        String hello = "hello";
-        if (C.s == null) {
-            C.s = refId(String.class, "hello").eval();
-        }
-        if (C.finalI != 1) {
+
+        // check final
+        if (C.primFinal != 1) {
             throw new InvokedFromNotDriverException();
         }
-        if (!C.finalS.equals("foo")) {
+        if (!C.strFinal.equals("foo")) {
             throw new InvokedFromNotDriverException();
         }
         int x = intVal().eval();

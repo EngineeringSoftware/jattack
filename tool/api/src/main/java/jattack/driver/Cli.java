@@ -196,7 +196,7 @@ public class Cli {
         case "debug": {
             if (value.isEmpty() || Boolean.parseBoolean(value)) {
                 Log.setLevel("debug");
-                org.csutil.log.Log.setLevel("debug");
+                // org.csutil.log.Log.setLevel("debug");
             }
             break;
         }

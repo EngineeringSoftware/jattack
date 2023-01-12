@@ -67,6 +67,7 @@ public class Driver {
     private static Method argsMethod; // single @Arguments method
     private static String initialTmplSrcCode;
     private static ClassBytes initialTmplClassBytes;
+    private static Map<String, Set<String>> mutableStaticFieldNames;
     private static Map<String, Map<String, Object>> immutableStaticFieldInitialValues; // {class name, {field name, field value}}
     private static Set<String> allClassNamesInTmpl; // including all nested classes
     private static Set<Class<?>> allClzes; // including all nested classes
@@ -385,15 +386,18 @@ public class Driver {
             // break.
             if (!Config.mimicExecution) {
                 if (noHoleRemaining()) {
+                    Log.debug("All holes filled. Stop.");
                     // We stop as early as all the holes have been filled.
                     break;
                 }
 
                 // TODO: static fields of all the classes in the world
-                Log.debug("# " + (i + 1) + " state: " + hashState(receiver, args));
-                if (Config.optStopEarly && !seenStates.add(hashState(receiver, args))) {
+                long currState = hashState(receiver, args);
+                Log.debug("# " + (i + 1) + " state: " + currState);
+                if (Config.optStopEarly && !seenStates.add(currState)) {
                     // We stop even earlier if we see a status we have
                     // seen.
+                    Log.debug("Previously seen state. Stop.");
                     break;
                 }
             }
@@ -586,8 +590,16 @@ public class Driver {
         // Save field values of every class defined from template source
         // file.
         immutableStaticFieldInitialValues = new HashMap<>();
+        mutableStaticFieldNames = new HashMap<>();
         for (Class<?> clz : allClzes) {
-            immutableStaticFieldInitialValues.put(clz.getName(), TypeUtil.captureImmutableStaticFieldValues(clz));
+            String clzName = clz.getName();
+            immutableStaticFieldInitialValues.put(
+                    clzName,
+                    TypeUtil.captureImmutableStaticFieldValues(clz));
+            mutableStaticFieldNames.put(
+                    clzName,
+                    TypeUtil.getMutableStaticFieldNames(clz)
+            );
         }
     }
 
@@ -608,9 +620,10 @@ public class Driver {
     private static void recoverInitialStatusForSingleClz(Class<?> clz)
             throws IllegalAccessException, NoSuchFieldException,
             NoSuchMethodException, InvocationTargetException {
+        String clzName = clz.getName();
         // Restore values for the fields that were not initialized in
         // the static initializer.
-        for (Map.Entry<String, Object> e: immutableStaticFieldInitialValues.get(clz.getName()).entrySet()) {
+        for (Map.Entry<String, Object> e: immutableStaticFieldInitialValues.get(clzName).entrySet()) {
             String name = e.getKey();
             Object val = e.getValue();
             Field f = clz.getDeclaredField(name);
@@ -622,10 +635,21 @@ public class Driver {
             f.set(null, val);
         }
 
+        // Restore null for all static fields of reference type,
+        // excluding strings or primitives. We have to explicitly do
+        // this because not every mutable field was explicitly
+        // initialized, in whose case the field will be well reset in
+        // the copied static initializer method.
+        for (String fieldName : mutableStaticFieldNames.get(clzName)) {
+            Field f = clz.getDeclaredField(fieldName);
+            f.setAccessible(true);
+            f.set(null, null);
+        }
+
         // Then we invoke copied static initializer method (if it
         // exists) to re-initialize some fields that was initialized
         // there.
-        if (!Data.hasStaticInitializer(clz.getName())) {
+        if (!Data.hasStaticInitializer(clzName)) {
             return;
         }
         // TODO: to recover inheritted static fields which were
@@ -766,7 +790,7 @@ public class Driver {
     }
 
     /**
-     * Return true if there is still unfilled hole currently.
+     * Return true if there is no unfilled hole currently.
      */
     private static boolean noHoleRemaining() {
         return Data.isAllReachableHolesFilled();
