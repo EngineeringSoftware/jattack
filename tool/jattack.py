@@ -24,6 +24,7 @@ LOG_DIR = DOT_DIR / "logs"
 JATTACK_JAR = _DIR / "jattack-all.jar"
 
 JAVA_OPTS = [
+    "--add-opens java.base/java.lang=ALL-UNNAMED",
     "--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED",
 ]
 

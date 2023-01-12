@@ -352,7 +352,8 @@ public class OutputTransformer extends Transformer {
         if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
             sb.append("e.printStackTrace();");
         }
-        sb.append(String.format("if (e instanceof %s) {throw e;}", Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ));
+        sb.append("if (e instanceof ").append(Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ).append(")")
+          .append("{throw (").append(Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ).append(") e;}");
         sb.append("cs.update(e.getClass().getName());");
         sb.append("}")
                 .append("}")
