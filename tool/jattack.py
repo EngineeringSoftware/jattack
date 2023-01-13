@@ -241,8 +241,9 @@ def exceute_and_test(
                 f" {opts}"
                 f" -XX:ErrorFile={output_dir_per_gen}/he_err_pid%p.log"
                 f" -XX:ReplayDataFile={output_dir_per_gen}/replay_pid%p.log"
-                f" {gen_clz} >{output_file}"
+                f" {gen_clz} --outFilePath='{output_file}'"
             )
+            logger.info(res.stdout)
             if res.returncode != 0:
                 logger.error(res.stderr)
                 crashed_jes.append(je)
@@ -323,10 +324,10 @@ def generate(
             (f" --seed={seed}" if seed else "") +\
             f" --outputDir={gen_dir}" +\
             f" --outputPostfix={gen_suffix}"
-            " " + " ".join(args) +\
-            " 2>&1",
+            " " + " ".join(args),
             check_returncode=0)
         print(res.stdout, end="")
+        print(res.stderr, end="")
     except BashError as e:
         logger.error(e)
         raise BailOutError("Generating from template failed")

@@ -183,7 +183,7 @@ public class OutputTransformer extends Transformer {
             initCu.removePackageDeclaration();
         }
         // Import CSUtil;
-        initCu.addImport("org.csutil.checksum.WrappedChecksum");
+        initCu.addImport(Constants.WRAPPED_CHECKSUM_CLZ);
         // Transform or add main()
         transformOrAddMain();
         if (Config.trackHoles) {
@@ -268,8 +268,8 @@ public class OutputTransformer extends Transformer {
     private static BlockStmt genMainBody() {
         return StaticJavaParser.parseBlock(
                 "{" +
-                        "System.out.println(main0(args));" +
-                        "}");
+                Constants.HELPER_CLZ + ".write(main0(args));" +
+                "}");
     }
 
     /**
@@ -284,15 +284,16 @@ public class OutputTransformer extends Transformer {
     }
 
     private BlockStmt genMain0Body() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("{");
+        // Parse args
+        sb.append(Constants.HELPER_CLZ + ".parseArgs(args);");
         // Number of iterations
-        sb.append("{")
-                .append("int N = ").append(Config.nInvocations).append(";")
-                .append("if (args.length > 0) {")
-                .append("N = Math.min(Integer.parseInt(args[0]), N);")
-                .append("}");
+        sb.append("int N = Math.min(")
+          .append(Constants.HELPER_CLZ).append(".nItrs, ")
+          .append(Config.nInvocations)
+          .append(");");
         // Initiate checksum instance
-        sb.append("WrappedChecksum cs = new WrappedChecksum(" + Config.ignoreJDKClasses + ");");
+        sb.append("WrappedChecksum cs = new WrappedChecksum(").append(Config.ignoreJDKClasses).append(");");
         // Create arguments for entry methods.
         String argVar = "eArg";
         String argsVar = "eArgs";

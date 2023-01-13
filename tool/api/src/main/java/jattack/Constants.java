@@ -28,6 +28,8 @@ public class Constants {
     public static final String EXCEPT_PKG = ROOT_PKG + ".exception";
     public static final String UTIL_PKG = ROOT_PKG + ".util";
 
+    public static final String CSUTIL_PKG = "org.csutil";
+
     /*---------------------------- Classes. ------------------------*/
 
     public static final String CONFIG_CLZ = ROOT_PKG + ".Config";
@@ -41,6 +43,9 @@ public class Constants {
     public static final String EXP_CLZ_INTERN_NAME = EXP_PKG_INTERN_NAME + "/Exp";
     public static final String INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ = EXCEPT_PKG + ".InvokedFromNotDriverException";
     public static final String IOUTIL_CLZ = UTIL_PKG + ".IOUtil";
+
+    public static final String WRAPPED_CHECKSUM_CLZ = CSUTIL_PKG + ".checksum.WrappedChecksum";
+    public static final String HELPER_CLZ = CSUTIL_PKG + ".Helper";
 
     public static final String OBJECT_CLZ_INTERN_NAME = "java/lang/Object";
     public static final String MAP_CLZ_INTERN_NAME = "java/util/Map";
