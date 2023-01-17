@@ -13,6 +13,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -470,14 +471,20 @@ public class WrappedChecksum {
         // We use another stack to reverse the collection
         // we use linkedlist because linkedlist supports null
         LinkedList<Object> revStack = new LinkedList<>();
-        for (Field field : TypeUtil.getAllFields(clz, ignoreJavaClasses)) {
-            if (field.isSynthetic()) {
-                continue; // skip synthetic field is a good habit
-            }
+        List<Field> allFields = TypeUtil.getAllFields(clz, ignoreJavaClasses);
+        for (Field field : allFields) {
             field.setAccessible(true);
             try {
                 Object fieldObj = field.get(obj);
+                Log.debug("Pushing field: " + field);
                 revStack.push(fieldObj);
+            } catch (IllegalArgumentException e) {
+                // ignore, some internal fields, e.g.,
+                // java.lang.Class.componentType is not allowed to
+                // obtain value when the Class is not an array
+                // type.
+                Log.debug(e);
+                Log.debug("Ignore field " + field);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
