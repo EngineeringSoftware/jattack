@@ -2,7 +2,6 @@ package jattack.transformer;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
@@ -12,9 +11,12 @@ import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
+import com.github.javaparser.printer.DefaultPrettyPrinter;
+import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import jattack.Constants;
 import jattack.data.Data;
 import jattack.driver.Driver;
+import jattack.transformer.visitor.HideGenericTypeArgumentPrinterVisitor;
 import jattack.util.JPUtil;
 
 import java.io.IOException;
@@ -39,6 +41,10 @@ public class HoleIdAssigner extends Transformer {
      * Flag if we mark condition hole when assigning identifier.
      */
     private final boolean markConditionHole;
+
+    private final static DefaultPrettyPrinter printer =
+            new DefaultPrettyPrinter(HideGenericTypeArgumentPrinterVisitor::new,
+                                     new DefaultPrinterConfiguration());
 
     /**
      * Constructor.
@@ -89,7 +95,7 @@ public class HoleIdAssigner extends Transformer {
         MethodDeclaration entryMethod = entryMethods.get(0);
         entryMethodName = entryMethod.getNameAsString();
         entryMethodParamTypes = entryMethod.getParameters().stream()
-                                           .map(p -> p.getTypeAsString() + (p.isVarArgs() ? "[]" : ""))
+                                           .map(p -> printer.print(p.getType()) + (p.isVarArgs() ? "[]" : ""))
                                            .toArray(String[]::new);
         entryMethodReturnsVoid = entryMethod.getType().isVoidType();
         entryMethodIsStatic = entryMethod.isStatic();
