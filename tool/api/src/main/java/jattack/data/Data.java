@@ -45,7 +45,7 @@ public class Data {
      * Maps hole identifiers to strings.
      * Reset per run.
      */
-    private static Map<Integer, String> strCache;
+    private static Map<Integer, String> strCache = new HashMap<>();
 
     public static void resetStrCache() {
         strCache = new HashMap<>();
@@ -230,7 +230,7 @@ public class Data {
      * <p>
      * Reset per run.
      */
-    private static Map<Integer, Boolean> alwaysTrueOrFalseCondHoles;
+    private static Map<Integer, Boolean> alwaysTrueOrFalseCondHoles = new HashMap<>();
 
     public static void documentAlwaysTrueOrFalseHole(int holeId, boolean val) {
         alwaysTrueOrFalseCondHoles.put(holeId, val);
