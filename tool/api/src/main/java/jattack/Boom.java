@@ -377,6 +377,48 @@ public final class Boom {
         return new RefId<>(type, exclude, Arrays.asList(ids));
     }
 
+    /*-------------------------- Arrays ----------------------------*/
+
+    /**
+     * A boolean array variable given a range of choices by variable
+     * name.
+     */
+    public static RefId<boolean[]> boolArrId(String... ids) {
+        return refId(boolean[].class, ids);
+    }
+
+    /**
+     * A char array variable given a range of choices by variable
+     * name.
+     */
+    public static RefId<char[]> charArrId(String... ids) {
+        return refId(char[].class, ids);
+    }
+
+    /**
+     * A short array variable given a range of choices by variable
+     * name.
+     */
+    public static RefId<short[]> shortArrId(String... ids) {
+        return refId(short[].class, ids);
+    }
+
+    /**
+     * A byte array variable given a range of choices by variable
+     * name.
+     */
+    public static RefId<byte[]> byteArrId(String... ids) {
+        return refId(byte[].class, ids);
+    }
+
+    /**
+     * A float array variable given a range of choices by variable
+     * name.
+     */
+    public static RefId<float[]> floatArrId(String... ids) {
+        return refId(float[].class, ids);
+    }
+
     /**
      * An int array variable given a range of choices by variable
      * name.
@@ -402,39 +444,123 @@ public final class Boom {
     }
 
     /**
-     * An int array value, totally unbounded.
+     * A boolean array access expression given a range of choices by
+     * variable name.
      */
-    public static IntArrVal intArrVal() {
-        if (Config.ss == SearchStrategy.RANDOM) {
-            return new IntArrVal();
-        } else {
-            return new IntArrVal(
-                    // pick non-negative choices as len
-                    Config.ints.stream().filter(i -> i >= 0).collect(Collectors.toList()),
-                    Config.ints);
-        }
+    public static RefArrAccessExp<Boolean, boolean[]> boolArrAccessExp(String... ids) {
+        return boolArrAccessExp(boolArrId(ids));
     }
 
     /**
-     * An int array value with length between {@code lenLow}
-     * (inclusive) and {@code lenHigh} (exclusive) and unbounded
-     * elements, where {@literal 0 <= lenLow < lenHigh}.
+     * A boolean array access expression given a boolean array expression,
+     * with indices auto inferred.
      */
-    public static IntArrVal intArrVal(int lenLow, int lenHigh) {
-        return Config.ss == SearchStrategy.RANDOM ?
-                new IntArrVal(lenLow, lenHigh) :
-                new IntArrVal(lenLow, lenHigh, Config.ints);
+    public static RefArrAccessExp<Boolean, boolean[]> boolArrAccessExp(Exp<boolean[]> id) {
+        return refArrAccessExp(boolean.class, boolean[].class, id);
     }
 
     /**
-     * An int array value with length between {@code lenLow}
-     * (inclusive) and {@code lenHigh} (exclusive) and element between
-     * {@code elemLow} (inclusive) and {@code elemHigh} (exclusive),
-     * where {@literal 0 <= lenLow < lenHigh} and
-     * {@literal 0 <= elemLow < elemHigh}.
+     * A boolean array access expression given a boolean array variable
+     * expression and an index number expression.
      */
-    public static IntArrVal intArrVal(int lenLow, int lenHigh, int elemLow, int eleHigh) {
-        return new IntArrVal(lenLow, lenHigh, elemLow, eleHigh);
+    public static RefArrAccessExp<Boolean, boolean[]> boolArrAccessExp(Exp<boolean[]> id, Exp<Integer> index) {
+        return refArrAccessExp(boolean.class, boolean[].class, id, index);
+    }
+
+    /**
+     * A char array access expression given a range of choices by
+     * variable name.
+     */
+    public static RefArrAccessExp<Character, char[]> charArrAccessExp(String... ids) {
+        return charArrAccessExp(charArrId(ids));
+    }
+
+    /**
+     * A char array access expression given a char array expression,
+     * with indices auto inferred.
+     */
+    public static RefArrAccessExp<Character, char[]> charArrAccessExp(Exp<char[]> id) {
+        return refArrAccessExp(char.class, char[].class, id);
+    }
+
+    /**
+     * A char array access expression given a char array variable
+     * expression and an index number expression.
+     */
+    public static RefArrAccessExp<Character, char[]> charArrAccessExp(Exp<char[]> id, Exp<Integer> index) {
+        return refArrAccessExp(char.class, char[].class, id, index);
+    }
+
+    /**
+     * A short array access expression given a range of choices by
+     * variable name.
+     */
+    public static RefArrAccessExp<Short, short[]> shortArrAccessExp(String... ids) {
+        return shortArrAccessExp(shortArrId(ids));
+    }
+
+    /**
+     * A short array access expression given a short array expression,
+     * with indices auto inferred.
+     */
+    public static RefArrAccessExp<Short, short[]> shortArrAccessExp(Exp<short[]> id) {
+        return refArrAccessExp(short.class, short[].class, id);
+    }
+
+    /**
+     * A short array access expression given a short array variable
+     * expression and an index number expression.
+     */
+    public static RefArrAccessExp<Short, short[]> shortArrAccessExp(Exp<short[]> id, Exp<Integer> index) {
+        return refArrAccessExp(short.class, short[].class, id, index);
+    }
+
+    /**
+     * A byte array access expression given a range of choices by
+     * variable name.
+     */
+    public static RefArrAccessExp<Byte, byte[]> byteArrAccessExp(String... ids) {
+        return byteArrAccessExp(byteArrId(ids));
+    }
+
+    /**
+     * A byte array access expression given an byte array expression,
+     * with indices auto inferred.
+     */
+    public static RefArrAccessExp<Byte, byte[]> byteArrAccessExp(Exp<byte[]> id) {
+        return refArrAccessExp(byte.class, byte[].class, id);
+    }
+
+    /**
+     * A byte array access expression given a byte array variable
+     * expression and an index number expression.
+     */
+    public static RefArrAccessExp<Byte, byte[]> byteArrAccessExp(Exp<byte[]> id, Exp<Integer> index) {
+        return refArrAccessExp(byte.class, byte[].class, id, index);
+    }
+
+    /**
+     * A float array access expression given a range of choices by
+     * variable name.
+     */
+    public static RefArrAccessExp<Float, float[]> floatArrAccessExp(String... ids) {
+        return floatArrAccessExp(floatArrId(ids));
+    }
+
+    /**
+     * A float array access expression given an float array expression,
+     * with indices auto inferred.
+     */
+    public static RefArrAccessExp<Float, float[]> floatArrAccessExp(Exp<float[]> id) {
+        return refArrAccessExp(float.class, float[].class, id);
+    }
+
+    /**
+     * A float array access expression given a float array variable
+     * expression and an index number expression.
+     */
+    public static RefArrAccessExp<Float, float[]> floatArrAccessExp(Exp<float[]> id, Exp<Integer> index) {
+        return refArrAccessExp(float.class, float[].class, id, index);
     }
 
     /**
@@ -470,7 +596,7 @@ public final class Boom {
     }
 
     /**
-     * An long array access expression given an long array variable name
+     * A long array access expression given a long array variable name
      * and an index number expression.
      */
     public static RefArrAccessExp<Integer, int[]> intArrAccessExp(Exp<int[]> id, Exp<Integer> index) {
@@ -528,25 +654,33 @@ public final class Boom {
     }
 
     /**
-     * A long array access expression given a long array variable name
-     * and an index number expression.
+     * A long array access expression given a long array variable
+     * expression and an index number expression.
      */
     public static RefArrAccessExp<Long, long[]> longArrAccessExp(Exp<long[]> id, Exp<Integer> index) {
-        return refArrAccessExp(Long.class, long[].class, id, index);
+        return refArrAccessExp(long.class, long[].class, id, index);
     }
 
-    public static RefArrAccessExp<Double, double[]> doubleArrAccessExp() {
-        return refArrAccessExp(double.class, double[].class);
-    }
-
+    /**
+     * A double array access expression given a range of choices by
+     * variable name.
+     */
     public static RefArrAccessExp<Double, double[]> doubleArrAccessExp(String... ids) {
         return doubleArrAccessExp(doubleArrId(ids));
     }
 
+    /**
+     * A double array access expression given a double array expression,
+     * with indices auto inferred.
+     */
     public static RefArrAccessExp<Double, double[]> doubleArrAccessExp(Exp<double[]> id) {
         return refArrAccessExp(double.class, double[].class, id);
     }
 
+    /**
+     * A long array access expression given a long array variable
+     * expression and an index number expression.
+     */
     public static RefArrAccessExp<Double, double[]> doubleArrAccessExp(Exp<double[]> id, Exp<Integer> index) {
         return refArrAccessExp(double.class, double[].class, id, index);
     }
@@ -599,7 +733,7 @@ public final class Boom {
         return new RefArrAccessExp<>(id, index);
     }
 
-    /*------------------------- Numbers ----------------------------*/
+    /*------------------------ Literals ----------------------------*/
 
     /**
      * A free {@link boolean} literal.
@@ -753,6 +887,42 @@ public final class Boom {
         return new ImDoubleVal(val);
     }
 
+    /**
+     * An int array value, totally unbounded.
+     */
+    public static IntArrVal intArrVal() {
+        if (Config.ss == SearchStrategy.RANDOM) {
+            return new IntArrVal();
+        } else {
+            return new IntArrVal(
+                    // pick non-negative choices as len
+                    Config.ints.stream().filter(i -> i >= 0).collect(Collectors.toList()),
+                    Config.ints);
+        }
+    }
+
+    /**
+     * An int array value with length between {@code lenLow}
+     * (inclusive) and {@code lenHigh} (exclusive) and unbounded
+     * elements, where {@literal 0 <= lenLow < lenHigh}.
+     */
+    public static IntArrVal intArrVal(int lenLow, int lenHigh) {
+        return Config.ss == SearchStrategy.RANDOM ?
+                new IntArrVal(lenLow, lenHigh) :
+                new IntArrVal(lenLow, lenHigh, Config.ints);
+    }
+
+    /**
+     * An int array value with length between {@code lenLow}
+     * (inclusive) and {@code lenHigh} (exclusive) and element between
+     * {@code elemLow} (inclusive) and {@code elemHigh} (exclusive),
+     * where {@literal 0 <= lenLow < lenHigh} and
+     * {@literal 0 <= elemLow < elemHigh}.
+     */
+    public static IntArrVal intArrVal(int lenLow, int lenHigh, int elemLow, int eleHigh) {
+        return new IntArrVal(lenLow, lenHigh, elemLow, eleHigh);
+    }
+
     /*--------------------------- Alt ------------------------------*/
 
     /**
@@ -872,8 +1042,7 @@ public final class Boom {
      * A free double variable or a double array access expression.
      */
     public static Exp<Double> doubleIdOrArrAccess() {
-        return alt(doubleId(),
-                refArrAccessExp(double.class, double[].class));
+        return alt(doubleId(), doubleArrAccessExp());
     }
 
     /**
