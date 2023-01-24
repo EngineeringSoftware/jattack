@@ -385,7 +385,7 @@ If you use JAttack in your research, we request you to cite our
   author = {Zang, Zhiqiang and Wiatrek, Nathaniel and Gligoric, Milos and Shi, August},
   title = {Compiler Testing using Template Java Programs},
   booktitle = {International Conference on Automated Software Engineering},
-  pages = {To appear},
+  pages = {23:1--23:13},
   year = {2022},
   doi = {10.1145/3551349.3556958},
 }
