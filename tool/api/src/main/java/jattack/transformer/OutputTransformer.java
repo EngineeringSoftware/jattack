@@ -294,46 +294,59 @@ public class OutputTransformer extends Transformer {
           .append(");");
         // Initiate checksum instance
         sb.append("WrappedChecksum cs = new WrappedChecksum(").append(Config.ignoreJDKClasses).append(");");
+
+        StringBuilder core = new StringBuilder();
         // Create arguments for entry methods.
         String argVar = "eArg";
         String argsVar = "eArgs";
         String receiverVar = "rcvr";
         if (argsMethodName != null) {
-            sb.append("Object[] ").append(argsVar).append(" = ")
+            core.append("Object[] ").append(argsVar).append(" = ")
               .append(argsMethodName).append("();");
+            core.append("cs.update(").append(argsVar).append(");");
         }
         // receiver variable initialization
         if (!entryMethodIsStatic) {
             // The class name needs to be modified per transformation
-            sb.append(inClzName).append(" ").append(receiverVar)
+            core.append(inClzName).append(" ").append(receiverVar)
               .append(" = ");
             if (argsMethodName != null) {
-                sb.append("(").append(inClzName).append(")") // cast
+                core.append("(").append(inClzName).append(")") // cast
                   .append(argsVar).append("[0]");
             } else {
-                sb.append(argMethodNames[0]).append("()");
+                core.append(argMethodNames[0]).append("()");
             }
-            sb.append(";");
+            core.append(";");
+            if (argsMethodName == null) {
+                // Only update checksum when using @Argument as we
+                // already updated before using @Arguments
+                core.append("cs.update(").append(receiverVar).append(");");
+            }
         }
         // argument variables initialization
         for (int i = 0; i < entryMethodParamTypes.length; i++) {
             String type = entryMethodParamTypes[i];
-            sb.append(type)
+            String name = argVar + (i + 1);
+            core.append(type)
               .append(" ")
-              .append(argVar).append(i + 1)
+              .append(name)
               .append(" = ");
             int j = entryMethodIsStatic ? i : i + 1;
             if (argsMethodName != null) {
-                sb.append("(").append(type).append(")") // cast
+                core.append("(").append(type).append(")") // cast
                   .append(argsVar).append("[").append(j).append("]");
             } else {
-                sb.append(argMethodNames[j]).append("()");
+                core.append(argMethodNames[j]).append("()");
             }
-            sb.append(";");
+            core.append(";");
+            if (argsMethodName == null) {
+                // Only update checksum when using @Argument as we
+                // already updated before using @Arguments
+                core.append("cs.update(").append(name).append(");");
+            }
         }
         // Main loop
-        sb.append("for (int i = 0; i < N; ++i) {")
-                .append("try {");
+        core.append("for (int i = 0; i < N; ++i) {");
         // Invoke the entry method
         StringJoiner entryMethodCall = new StringJoiner(
                 ", ",
@@ -342,26 +355,36 @@ public class OutputTransformer extends Transformer {
         for (int i = 0; i < entryMethodParamTypes.length; i++) {
             entryMethodCall.add(argVar + (i + 1));
         }
-        if (entryMethodReturnsVoid) {
-            sb.append(entryMethodCall).append(";");
-        } else {
-            sb.append("cs.update(").append(entryMethodCall).append(");");
-        }
-        sb.append("}")
-                .append("catch (Throwable e) {");
+        String methodCallLine = entryMethodReturnsVoid ?
+                entryMethodCall + ";":
+                "cs.update(" + entryMethodCall + ");";
+        core.append(wrapTryBlock(methodCallLine))
+          .append("}");
+
+        // Wrap a try catch for catching exception from argument(s)
+        // method invocation
+        sb.append(wrapTryBlock(core.toString()));
+
+        // Update checksum with static fields
+        sb.append("cs.updateStaticFieldsOfClass(").append(inClzName).append(".class);")
+                .append("return cs.getValue();")
+                .append("}");
+        return StaticJavaParser.parseBlock(sb.toString());
+    }
+
+    private String wrapTryBlock(String code) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("try {")
+          .append(code)
+          .append("} catch (Throwable e) {");
         // Catch block
         if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
             sb.append("e.printStackTrace();");
         }
         sb.append("if (e instanceof ").append(Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ).append(")")
-          .append("{throw (").append(Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ).append(") e;}");
-        sb.append("cs.update(e.getClass().getName());");
-        sb.append("}")
-                .append("}")
-                // Update checksum with static fields
-                .append("cs.updateStaticFieldsOfClass(").append(inClzName).append(".class);")
-                .append("return cs.getValue();")
-                .append("}");
-        return StaticJavaParser.parseBlock(sb.toString());
+          .append("{throw (").append(Constants.INVOKED_FROM_NOT_DRIVER_EXCEPTION_CLZ).append(") e;}")
+          .append("cs.update(e.getClass().getName());")
+          .append("}");
+        return sb.toString();
     }
 }

@@ -355,12 +355,28 @@ public class Driver {
 
     private static void runTmpl0()
             throws IllegalAccessException, InvocationTargetException,
-            NoSuchFieldException, CompilationException {
+            CompilationException {
         if (Config.mimicExecution) {
             checksum = new WrappedChecksum(Config.ignoreJDKClasses);
         }
         int prevNHolesFilled = 0;
-        Object[] argsIncludingReceiverIfExists = execAndGetArgValues();
+
+        // Execute argument(s) method to obtain arguments including
+        // possible receiver
+        Object[] argsIncludingReceiverIfExists = null;
+        try {
+            argsIncludingReceiverIfExists = execAndGetArgValues();
+        } catch (InvocationTargetException e) {
+            handleExceptionInInvocation(e);
+            // return earlier as an exception was thrown when invoking
+            // argument(s) methods
+            if (Config.mimicExecution) {
+                checksum.updateStaticFieldsOfClass(tmplClz);
+            }
+            return;
+        }
+
+        // Move on to execute entry method
         Object receiver = entryMethodIsStatic ? null : argsIncludingReceiverIfExists[0];
         Object[] args = entryMethodIsStatic ?
                 argsIncludingReceiverIfExists :
@@ -408,7 +424,7 @@ public class Driver {
                 // order to speed up the following iterations.
                 transformTmplAndCompileInMemoryAndRedefineClass();
                 if (Config.isProfiling) {
-                    numHotFillingPerGen +=1;
+                    numHotFillingPerGen += 1;
                 }
             }
         }
@@ -461,61 +477,79 @@ public class Driver {
     private static void executeEntryMethod0(Object receiver, Object... args)
             throws InvocationTargetException, IllegalAccessException {
         try {
-            Object ret = entryMethod.invoke(receiver, args);
-            if (Config.mimicExecution
-                    && !entryMethod.getReturnType().equals(Void.TYPE)) {
-                // We don't checksum anything in a generated program
-                // if the entry method returns void (see
-                // OutputTransformer), so we want to keep consistent
-                // here.
-                checksum.update(ret);
-            }
+            executeMethod(entryMethod, receiver, args);
         } catch (InvocationTargetException e) {
-            // Throw the exception only when it is caused by the tool
-            // itself and not an arithmetic exception or invalid index
-            // exception
-            Throwable cause = e.getCause();
-            if (Config.countInvalidArrIdxException && isInvalidArrayIndexException(cause)) {
-                threwInvalidArrIdxExceptionPerGen = true;
-            }
-            StackTraceElement[] frames = cause.getStackTrace();
-            if (frames.length == 0) {
-                // -XX:+OmitStackTraceInFastThrow occurred; we expect
-                // this is a pre-existing exception, and we can safely
-                // ignore it, because we know we already saw and
-                // ignored it otherwise the program would have stopped.
-                return;
-            }
+            handleExceptionInInvocation(e);
+        }
+    }
 
-            // Classloader issue should be gone now; tested it was
-            // gone. this is not supposed to be triggered any more but
-            // keep it for safe.
-            if (cause instanceof IllegalAccessError) {
-                throw e;
-            }
+    /**
+     * Execute entry method or argument(s) methods.
+     */
+    private static Object executeMethod(Method method, Object receiver, Object... args)
+            throws InvocationTargetException, IllegalAccessException {
+        Object ret = method.invoke(receiver, args);
+        if (Config.mimicExecution && !method.getReturnType().equals(Void.TYPE)) {
+            // We don't checksum anything in a generated program
+            // if the entry method returns void (see
+            // OutputTransformer), so we want to keep consistent
+            // here.
+            checksum.update(ret);
+        }
+        return ret;
+    }
 
-            StackTraceElement frame = getFirstNonJavaOwnStack(frames);
-            if (frame == null) {
-                // exception is from inside Java
-                throw e;
+    /**
+     * Handle exception thrown from application code, not jattack,
+     * including invocation of both entry method and any of argument(s)
+     * methods.
+     */
+    private static void handleExceptionInInvocation(InvocationTargetException e)
+            throws InvocationTargetException {
+        // Throw the exception only when it is caused by the tool
+        // itself and not an arithmetic exception or invalid index
+        // exception
+        Throwable cause = e.getCause();
+        if (Config.countInvalidArrIdxException && isInvalidArrayIndexException(cause)) {
+            threwInvalidArrIdxExceptionPerGen = true;
+        }
+        StackTraceElement[] frames = cause.getStackTrace();
+        if (frames.length == 0) {
+            // -XX:+OmitStackTraceInFastThrow occurred; we expect
+            // this is a pre-existing exception, and we can safely
+            // ignore it, because we know we already saw and
+            // ignored it otherwise the program would have stopped.
+            return;
+        }
+
+        // Classloader issue should be gone now; tested it was
+        // gone. this is not supposed to be triggered any more but
+        // keep it for safe.
+        if (cause instanceof IllegalAccessError) {
+            throw e;
+        }
+
+        StackTraceElement frame = getFirstNonJavaOwnStack(frames);
+        if (frame == null) {
+            // exception is from inside Java
+            throw e;
+        }
+        // We eventually want to remove the constraint of
+        // !canIgnore here; for now I keep it to learn what
+        // interesting exception we could be handling; otherwise
+        // any exception just slips before we are aware of it.
+        if (TypeUtil.isToolOwnClass(frame.getClassName()) && !canIgnore(cause)) {
+            throw e;
+        } else {
+            // Ignore
+            // TODO: perform the same checksum as we do in main
+            //   generated by output transformer for testing
+            //   purpose
+            if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
+                e.printStackTrace();
             }
-            // We eventually want to remove the constraint of
-            // !canIgnore here; for now I keep it to learn what
-            // interesting exception we could be handling; otherwise
-            // any exception just slips before we are aware of it.
-            if (TypeUtil.isToolOwnClass(frame.getClassName()) && !canIgnore(cause)) {
-                throw e;
-            } else {
-                // Ignore
-                // TODO: perform the same checksum as we do in main
-                //   generated by output transformer for testing
-                //   purpose
-                if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
-                    e.printStackTrace();
-                }
-                if (Config.mimicExecution) {
-                    checksum.update(cause.getClass().getName());
-                }
+            if (Config.mimicExecution) {
+                checksum.update(cause.getClass().getName());
             }
         }
     }
@@ -880,14 +914,14 @@ public class Driver {
 
     private static Object[] execArgsMethodAndGetValues(Method method)
             throws InvocationTargetException, IllegalAccessException {
-        return (Object[]) method.invoke(null);
+        return (Object[]) executeMethod(method, null);
     }
 
     private static Object[] execArgMethodsAndGetValues(Method[] methods)
             throws InvocationTargetException, IllegalAccessException {
         Object[] args = new Object[methods.length];
-        for (int i = 0; i < methods.length; i++) {
-            args[i] = methods[i].invoke(null);
+        for (int i = 0; i < args.length; i++) {
+            args[i] = executeMethod(methods[i], null);
         }
         return args;
     }
