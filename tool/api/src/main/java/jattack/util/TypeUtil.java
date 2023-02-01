@@ -375,10 +375,14 @@ public class TypeUtil {
     public static boolean isTypeDescSupported(String desc) {
         return desc.startsWith("[")
                 || desc.startsWith("L")
-                || desc.equals("I")
                 || desc.equals("Z")
+                || desc.equals("B")
+                || desc.equals("C")
                 || desc.equals("D")
-                || desc.equals("J");
+                || desc.equals("F")
+                || desc.equals("I")
+                || desc.equals("J")
+                || desc.equals("S");
     }
 
     private static final Map<String, String> primitiveNameByDesc = Map.of(
@@ -404,7 +408,7 @@ public class TypeUtil {
             "F", "java/lang/Float",
             "I", "java/lang/Integer",
             "J", "java/lang/Long",
-            "S", "java/land/Short"
+            "S", "java/lang/Short"
     );
 
     public static boolean isPrimitive(String typeDesc) {

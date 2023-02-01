@@ -1,5 +1,6 @@
 package jattack.examples;
 
+import jattack.annotation.Arguments;
 import jattack.annotation.Entry;
 
 import static jattack.Boom.*;
@@ -16,7 +17,8 @@ public class SkTestPrimitiveArrRelatedApis {
     static double[] f_d = {0.0, 1.0, 2.0};
 
     @Entry
-    static void m() {
+    static void m(boolean[] a_b, char[] a_c, byte[] a_by, short[] a_s,
+                  int[] a_i, long[] a_l, float[] a_f, double[] a_d) {
         boolean b = boolArrAccessExp().eval();
         char c = charArrAccessExp().eval();
         byte by = byteArrAccessExp().eval();
@@ -25,5 +27,10 @@ public class SkTestPrimitiveArrRelatedApis {
         long l = longArrAccessExp().eval();
         float f = floatArrAccessExp().eval();
         double d = doubleArrAccessExp().eval();
+    }
+
+    @Arguments
+    static Object[] args() {
+        return new Object[]{ f_b, f_c, f_by, f_s, f_i, f_l, f_f, f_d };
     }
 }

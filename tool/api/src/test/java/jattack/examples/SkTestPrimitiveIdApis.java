@@ -15,7 +15,8 @@ public class SkTestPrimitiveIdApis {
     static double f_d;
 
     @Entry
-    public static void m() {
+    public static void m(boolean a_b, char a_c, byte a_by, short a_s,
+                         int a_i, long a_l, float a_f, double a_d) {
         boolean b = boolId().eval();
         char c = charId().eval();
         byte by = byteId().eval();
@@ -24,5 +25,10 @@ public class SkTestPrimitiveIdApis {
         long l = longId().eval();
         float f = floatId().eval();
         double d = doubleId().eval();
+    }
+
+    @Arguments
+    static Object[] args() {
+        return new Object[]{ f_b, f_c, f_by, f_s, f_i, f_l, f_f, f_d };
     }
 }
