@@ -3,6 +3,7 @@ package jattack.ast.visitor;
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.BAriExp;
 import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CastExp;
 import jattack.ast.exp.CharVal;
 import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LongVal;
@@ -160,6 +161,21 @@ public class PrintVisitor extends Visitor {
         String target = stack.pop();
         String value = stack.pop();
         stack.push(String.format("(%s = %s)", target, value));
+    }
+
+    @Override
+    public <T> void endVisit(CastExp<T> node) {
+        String value = stack.pop();
+        String typeStr;
+        Class<T> type = node.getType();
+        if (org.csutil.util.TypeUtil.isBoxedPrimitive(type)) {
+            // get primitive type
+            typeStr = org.csutil.util.TypeUtil.boxedToPrimitive(type).getCanonicalName();
+        } else {
+            // general reference types
+            typeStr = type.getCanonicalName();
+        }
+        stack.push(String.format("((%s) %s)", typeStr, value));
     }
 
     @Override

@@ -28,6 +28,8 @@ public enum RelOp implements Op {
             return apply(left.intValue(), right.intValue());
         } else if (left instanceof Long) {
             return apply(left.longValue(), right.longValue());
+        } else if (left instanceof Float) {
+            return apply(left.floatValue(), right.floatValue());
         } else if (left instanceof Double) {
             return apply(left.doubleValue(), right.doubleValue());
         } else {
@@ -55,6 +57,25 @@ public enum RelOp implements Op {
     }
 
     private boolean apply(long left, long right) {
+        switch (this) {
+        case EQ:
+            return left == right;
+        case GE:
+            return left >= right;
+        case GT:
+            return left > right;
+        case LE:
+            return left <= right;
+        case LT:
+            return left < right;
+        case NE:
+            return left != right;
+        default:
+            throw new RuntimeException("Unrecognized operator " + this.asStr());
+        }
+    }
+
+    private boolean apply(float left, float right) {
         switch (this) {
         case EQ:
             return left == right;

@@ -4,6 +4,7 @@ import jattack.ast.exp.AltExp;
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.BAriExp;
 import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CastExp;
 import jattack.ast.exp.CharVal;
 import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LHSExp;
@@ -186,6 +187,22 @@ public final class Boom {
             ops = AriOp.values();
         }
         return new BAriExp<>(exp1, exp2, Arrays.asList(ops));
+    }
+
+    // TODO: helpful APIs for casting, not compilable now due to
+    //  methods clash with same erasure
+    // public static BAriExp<Integer> arithmetic(Exp<Short> exp1, Exp<Integer> exp2, AriOp... ops) {
+    //     return arithmetic(cast(Integer.class, exp1), exp2, ops);
+    // }
+    //
+    // public static BAriExp<Double> arithmetic(Exp<Integer> exp1, Exp<Double> exp2, AriOp... ops) {
+    //     return arithmetic(cast(Double.class, exp1), exp2, ops);
+    // }
+
+    /*-------------------------- Cast ------------------------------*/
+
+    public static <T> CastExp<T> cast(Class<T> type, Exp<?> exp) {
+        return new CastExp<T>(type, exp);
     }
 
     /*----------------------- Shift expressions --------------------*/

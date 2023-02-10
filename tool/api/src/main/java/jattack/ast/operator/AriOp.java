@@ -32,6 +32,8 @@ public enum AriOp implements AriOrShiftOp {
             return apply(left.intValue(), right.intValue());
         } else if (left instanceof Long) {
             return apply(left.longValue(), right.longValue());
+        } else if (left instanceof Float) {
+            return apply(left.floatValue(), right.floatValue());
         } else if (left instanceof Double) {
             return apply(left.doubleValue(), right.doubleValue());
         } else {
@@ -70,6 +72,23 @@ public enum AriOp implements AriOrShiftOp {
             return left % right; // throw ArithmeticException
         default:
             throw new RuntimeException("Unrecognized operator " + this.asStr());
+        }
+    }
+
+    public float apply(float left, float right) {
+        switch (this) {
+        case ADD:
+            return left + right;
+        case SUB:
+            return left - right;
+        case MUL:
+            return left * right;
+        case DIV:
+            return left / right;
+        case MOD:
+            return left % right;
+        default:
+            throw new RuntimeException("Unsupported operator " + this.asStr());
         }
     }
 

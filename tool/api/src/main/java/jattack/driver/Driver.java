@@ -567,6 +567,7 @@ public class Driver {
         System.gc();
 
         Data.runCount += 1;
+        Log.debug("Gen #" + Data.runCount);
         Data.resetStrCache();
         Data.holeVector = new UniqueList<>();
         Data.resetNeverReachableHoles();

@@ -2,6 +2,7 @@ package jattack.ast.visitor;
 
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CastExp;
 import jattack.ast.exp.CharVal;
 import jattack.ast.exp.Exp;
 import jattack.ast.exp.FloatVal;
@@ -34,6 +35,7 @@ import jattack.ast.stmt.IfStmt;
 import jattack.ast.stmt.Stmt;
 import jattack.ast.stmt.TryStmt;
 import jattack.ast.stmt.WhileStmt;
+import jattack.util.TypeUtil;
 
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
@@ -70,7 +72,7 @@ public class EvalVisitor extends Visitor {
     @SuppressWarnings("unchecked")
     @Override
     public <N extends Number> void endVisit(ShiftExp<N> node) {
-        int right = castToInteger(stack.pop());
+        int right = (int) stack.pop();
         N left = (N) stack.pop();
         ShiftOp op = node.getOp();
         stack.push(op.apply(left, right));
@@ -169,7 +171,7 @@ public class EvalVisitor extends Visitor {
         // id
         Object arr = stack.pop();
         // index
-        int i = castToInteger(stack.pop());
+        int i = (int) stack.pop();
         stack.push(Array.get(arr, i));
     }
 
@@ -178,7 +180,7 @@ public class EvalVisitor extends Visitor {
         // Can only be in LogExp
         // TODO: move this to endVisit so we don't need to visit op
         //  at all.
-        boolean left = cast(stack.peek(), Boolean.class);
+        boolean left = (boolean) stack.peek();
         if ((!left && op.getOp() == LogOp.AND)
                 || (left && op.getOp() == LogOp.OR)) {
             shortCircuit = true;
@@ -200,8 +202,8 @@ public class EvalVisitor extends Visitor {
             shortCircuit = false;
             return;
         }
-        boolean right = castToBoolean(stack.pop());
-        boolean left = castToBoolean(stack.pop());
+        boolean right = (boolean) stack.pop();
+        boolean left = (boolean) stack.pop();
         stack.push(node.getOp().apply(left, right));
     }
 
@@ -237,6 +239,68 @@ public class EvalVisitor extends Visitor {
         stack.pop(); // target
         // no need to pop since we still have to push back anyway
         node.updateVal((T) stack.peek());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> void endVisit(CastExp<T> node) {
+        Object srcVal = stack.pop();
+        Class<T> type = node.getType();
+        if (type.equals(Double.class)) {
+            double tgtVal;
+            if (srcVal instanceof Byte) {
+                tgtVal = (double) (Byte) srcVal;
+            } else if (srcVal instanceof Short) {
+                tgtVal = (double) (Short) srcVal;
+            } else if (srcVal instanceof Integer) {
+                tgtVal = (double) (Integer) srcVal;
+            } else if (srcVal instanceof Long) {
+                tgtVal = (double) (Long) srcVal;
+            } else if (srcVal instanceof Float) {
+                tgtVal = (double) (Float) srcVal;
+            } else {
+                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+            }
+            stack.push(tgtVal);
+        } else if (type.equals(Float.class)) {
+            float tgtVal;
+            if (srcVal instanceof Byte) {
+                tgtVal = (float) (Byte) srcVal;
+            } else if (srcVal instanceof Short) {
+                tgtVal = (float) (Short) srcVal;
+            } else if (srcVal instanceof Integer) {
+                tgtVal = (float) (Integer) srcVal;
+            } else if (srcVal instanceof Long) {
+                tgtVal = (float) (Long) srcVal;
+            } else {
+                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+            }
+            stack.push(tgtVal);
+        } else if (type.equals(Long.class)) {
+            long tgtVal;
+            if (srcVal instanceof Byte) {
+                tgtVal = (long) (Byte) srcVal;
+            } else if (srcVal instanceof Short) {
+                tgtVal = (long) (Short) srcVal;
+            } else if (srcVal instanceof Integer) {
+                tgtVal = (long) (Integer) srcVal;
+            } else {
+                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+            }
+            stack.push(tgtVal);
+        } else if (type.equals(Integer.class)) {
+            int tgtVal;
+            if (srcVal instanceof Byte) {
+                tgtVal = (int) (Byte) srcVal;
+            } else if (srcVal instanceof Short) {
+                tgtVal = (int) (Short) srcVal;
+            } else {
+                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+            }
+            stack.push(tgtVal);
+        } else {
+            throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+        }
     }
 
     @Override

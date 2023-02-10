@@ -2,6 +2,7 @@ package jattack.ast.visitor;
 
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CastExp;
 import jattack.ast.exp.CharVal;
 import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LongVal;
@@ -123,6 +124,10 @@ public class Visitor {
     public <T> boolean visit(AssignExp<T> node) { return true; }
 
     public <T> void endVisit(AssignExp<T> node) {}
+
+    public <T> boolean visit(CastExp<T> node) { return true; }
+
+    public <T> void endVisit(CastExp<T> node) {}
 
     public void visitStmt(ExprStmt node) {}
 

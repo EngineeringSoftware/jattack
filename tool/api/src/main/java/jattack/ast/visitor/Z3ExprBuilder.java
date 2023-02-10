@@ -8,6 +8,7 @@ import com.microsoft.z3.Sort;
 import jattack.ast.exp.AssignExp;
 import jattack.ast.exp.BAriExp;
 import jattack.ast.exp.ByteVal;
+import jattack.ast.exp.CastExp;
 import jattack.ast.exp.CharVal;
 import jattack.ast.exp.FloatVal;
 import jattack.ast.exp.LongVal;
@@ -308,6 +309,17 @@ public class Z3ExprBuilder extends Visitor {
 
     @Override
     public <T> void endVisit(AssignExp<T> node) {
+        buildable = false;
+    }
+
+    @Override
+    public <T> boolean visit(CastExp<T> node) {
+        return buildable;
+    }
+
+    @Override
+    public <T> void endVisit(CastExp<T> node) {
+        // TODO: encode with Z3 solver
         buildable = false;
     }
 }
