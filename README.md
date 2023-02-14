@@ -373,6 +373,8 @@ findings to this list. Please open a PR with a link to your bug.
 - [JDK-8271926](https://bugs.openjdk.java.net/browse/JDK-8271926):
   Crash related to Arrays.copyOf with # Problematic frame: # V
   [libjvm.so+0xc1b83d] NodeHash::hash_delete(Node const*)+0xd
+- [JDK-8297730](https://bugs.openjdk.java.net/browse/JDK-8297730):
+  C2: Arraycopy intrinsic throws incorrect exception
 
 ## Citation
 
