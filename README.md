@@ -378,16 +378,27 @@ findings to this list. Please open a PR with a link to your bug.
 
 If you use JAttack in your research, we request you to cite our
 [ASE'22 paper](https://cptgit.github.io/dl/papers/zang22jattack.pdf)
-(which won an ACM SIGSOFT Distinguished Paper Award). Thank you!
+(which won an ACM SIGSOFT Distinguished Paper Award) and [ICSE'23 Demo
+paper](https://cptgit.github.io/dl/papers/zang23jattacktool.pdf).
+Thank you!
 
 ```bibtex
 @inproceedings{zang22jattack,
   author = {Zang, Zhiqiang and Wiatrek, Nathaniel and Gligoric, Milos and Shi, August},
-  title = {Compiler Testing using Template Java Programs},
+  title = {Compiler Testing using Template {J}ava Programs},
   booktitle = {International Conference on Automated Software Engineering},
   pages = {23:1--23:13},
   year = {2022},
   doi = {10.1145/3551349.3556958},
+}
+
+@inproceedings{zang23jattacktool,
+  author = {Zang, Zhiqiang and Yu, Fu-Yao and Wiatrek, Nathaniel and Gligoric, Milos and Shi, August},
+  title = {{JA}ttack: {J}ava {JIT} Testing using Template Programs},
+  booktitle = {International Conference on Software Engineering, Tool Demonstrations Track},
+  pages = {to appear},
+  year= {2023},
+  doi = {to appear},
 }
 ```
 
