@@ -204,6 +204,13 @@ public class Rand extends Random {
      * Returns a random char.
      */
     public char nextChar() {
-        return (char) nextInt(1<<16);
+        // We cannot follow the range of char defined in Java, which
+        // is a 16 bit unsigned inter, as there are some characters in
+        // this range undefined in Unicode, which causes some
+        // inconsistency when we print out the character as a String.
+        // Thus we just use basic ASCII table. JavaParser has issues
+        // parsing unprintable character, so we end up with all 95
+        // printale characters.
+        return (char) nextInt(32, 127);
     }
 }

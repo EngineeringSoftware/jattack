@@ -91,6 +91,7 @@ public class HoleFiller extends ModifierVisitor<Void> {
             Expression filledHole = StaticJavaParser.parseExpression(expr);
             return trackHoles ? wrapHoleFilling(filledHole, holeId) : filledHole;
         } catch (ParseProblemException e) {
+            e.printStackTrace();
             throw new RuntimeException("Expect an expression for this hole but encountered " + expr);
         }
     }

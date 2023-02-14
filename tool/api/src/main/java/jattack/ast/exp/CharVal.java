@@ -35,7 +35,8 @@ public class CharVal extends LitExp<Character> {
 
     @Override
     public String asStr() {
-        return "'" + val + "'";
+        // Needs to escape single quote
+        return "'" + (val == '\'' ? ("\\" + val) : val) + "'";
     }
 
     @Override

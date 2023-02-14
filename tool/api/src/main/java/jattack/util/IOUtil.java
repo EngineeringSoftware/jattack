@@ -1,6 +1,7 @@
 package jattack.util;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,11 +13,11 @@ import java.nio.file.StandardOpenOption;
 public class IOUtil {
 
     public static void writeToFile(String dir, String file, String code) {
-        writeToFile(Paths.get(dir, file), code.getBytes(), false);
+        writeToFile(dir, file, code, false);
     }
 
     public static void writeToFile(String dir, String file, String code, boolean append) {
-        writeToFile(Paths.get(dir, file), code.getBytes(), append);
+        writeToFile(Paths.get(dir, file), code.getBytes(StandardCharsets.UTF_8), append);
     }
 
     public static void writeToFile(Path path, byte[] bytes, boolean append) {
