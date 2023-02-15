@@ -35,7 +35,6 @@ import jattack.ast.stmt.IfStmt;
 import jattack.ast.stmt.Stmt;
 import jattack.ast.stmt.TryStmt;
 import jattack.ast.stmt.WhileStmt;
-import jattack.util.TypeUtil;
 
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
@@ -258,8 +257,10 @@ public class EvalVisitor extends Visitor {
                 tgtVal = (double) (Long) srcVal;
             } else if (srcVal instanceof Float) {
                 tgtVal = (double) (Float) srcVal;
+            } else if (srcVal instanceof Character) {
+                tgtVal = (double) (Character) srcVal;
             } else {
-                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
             }
             stack.push(tgtVal);
         } else if (type.equals(Float.class)) {
@@ -272,8 +273,10 @@ public class EvalVisitor extends Visitor {
                 tgtVal = (float) (Integer) srcVal;
             } else if (srcVal instanceof Long) {
                 tgtVal = (float) (Long) srcVal;
+            } else if (srcVal instanceof Character) {
+                tgtVal = (float) (Character) srcVal;
             } else {
-                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
             }
             stack.push(tgtVal);
         } else if (type.equals(Long.class)) {
@@ -284,8 +287,10 @@ public class EvalVisitor extends Visitor {
                 tgtVal = (long) (Short) srcVal;
             } else if (srcVal instanceof Integer) {
                 tgtVal = (long) (Integer) srcVal;
+            } else if (srcVal instanceof Character) {
+                tgtVal = (long) (Character) srcVal;
             } else {
-                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
             }
             stack.push(tgtVal);
         } else if (type.equals(Integer.class)) {
@@ -294,12 +299,22 @@ public class EvalVisitor extends Visitor {
                 tgtVal = (int) (Byte) srcVal;
             } else if (srcVal instanceof Short) {
                 tgtVal = (int) (Short) srcVal;
+            } else if (srcVal instanceof Character) {
+                tgtVal = (int) (Character) srcVal;
             } else {
-                throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+            }
+            stack.push(tgtVal);
+        } else if(type.equals(Short.class)) {
+            short tgtVal;
+            if (srcVal instanceof Byte) {
+                tgtVal = (short) (Byte) srcVal;
+            } else {
+                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
             }
             stack.push(tgtVal);
         } else {
-            throw new RuntimeException(srcVal.getClass() + "cannot be casted to " + type);
+            throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
         }
     }
 
