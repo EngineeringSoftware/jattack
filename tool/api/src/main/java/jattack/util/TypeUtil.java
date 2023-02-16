@@ -435,6 +435,27 @@ public class TypeUtil {
         return intern2Desc(primitiveDescToWrappedInternName(desc));
     }
 
+    public static boolean isBoxed(Class<?> clz) {
+        return org.csutil.util.TypeUtil.isBoxedPrimitive(clz);
+    }
+
+    public static Class<?> unbox(Class<?> clz) {
+        return org.csutil.util.TypeUtil.boxedToPrimitive(clz);
+    }
+
+    /**
+     * Returns true if the given {@code clz} is one of {@link Byte},
+     * {@link Short}, {@link Integer}, {@link Long}, {@link Float},
+     * {@link Double}; otherwise false.
+     * @param obj the class to query
+     * @return true if th given {@code clz} is one of {@link Byte},
+     * {@link Short}, {@link Integer}, {@link Long}, {@link Float},
+     * {@link Double}; otherwise false.
+     */
+    public static boolean isNumberBoxed(Class<?> clz) {
+        return Number.class.isAssignableFrom(clz) && isBoxed(clz);
+    }
+
     /**
      * Convert any fine-grained type descriptor to primitive types or
      * Object.
@@ -472,6 +493,10 @@ public class TypeUtil {
 
     public static String bin2Desc(String binClassName) {
         return intern2Desc(bin2Intern(binClassName));
+    }
+
+    public static String desc2Bin(String typeDesc) {
+        return intern2Bin(desc2Intern(typeDesc));
     }
 
     public static String desc2Intern(String typeDesc) {
@@ -547,7 +572,7 @@ public class TypeUtil {
 
     /**
      * Returns a {@code Class} for an array type whose component type
-     * is the given {@linkplain Class}.
+     * is the given {@link Class}.
      *
      * @return a {@code Class} describing the array type
      */

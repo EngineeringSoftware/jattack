@@ -4,7 +4,6 @@ import jattack.Config;
 import jattack.ast.exp.iterator.ChainItr;
 import jattack.ast.exp.iterator.ExpItr;
 import jattack.ast.exp.iterator.Itr;
-import jattack.ast.nodetypes.NodeWithSideEffect;
 import jattack.ast.visitor.Visitor;
 import jattack.data.Data;
 import jattack.driver.Driver;
@@ -15,7 +14,7 @@ import java.lang.reflect.Array;
  * Reference array access expression, evaluated to an instance of the
  * component type of this array.
  */
-public class RefArrAccessExp<E, A> extends LHSExp<E> implements NodeWithSideEffect<E> {
+public class RefArrAccessExp<E, A> extends LHSExp<E> {
 
     private final Exp<A> id;
 

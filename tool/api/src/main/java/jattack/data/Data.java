@@ -449,14 +449,16 @@ public class Data {
         if (Config.staticGen) {
             return staticGetVarsOfType(type);
         } else {
-            return getVarsOfType(type.getName());
+            return getVarsOfTypeFromMemory(type);
         }
     }
 
-    private static Set<String> getVarsOfType(String type) {
+    private static Set<String> getVarsOfTypeFromMemory(Class<?> type) {
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
         for (Map.Entry<String, Object> e : memory.entrySet()) {
-            if (e.getValue().getClass().getName().equals(type)) {
+            Object val = e.getValue();
+            // null can be assigned to any reference type
+            if (val == null || type.isAssignableFrom(val.getClass())) {
                 ids.add(e.getKey());
             }
         }
@@ -523,10 +525,14 @@ public class Data {
     public static Set<String> staticGetVarsOfType(Class<?> type, int hole) {
         Set<Symbol> localVars = varsByHole.get(hole);
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
-        String targetDesc = Type.getDescriptor(type);
         for (Symbol v : localVars) {
-            if (v.getDesc().equals(targetDesc)) {
-                ids.add(v.getName());
+            try {
+                Class<?> vType = Class.forName(TypeUtil.desc2Bin(v.getDesc()));
+                if (type.isAssignableFrom(vType)) {
+                    ids.add(v.getName());
+                }
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
         return ids;

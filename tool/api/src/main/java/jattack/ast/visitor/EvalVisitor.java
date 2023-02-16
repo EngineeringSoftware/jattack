@@ -35,6 +35,7 @@ import jattack.ast.stmt.IfStmt;
 import jattack.ast.stmt.Stmt;
 import jattack.ast.stmt.TryStmt;
 import jattack.ast.stmt.WhileStmt;
+import jattack.util.TypeUtil;
 
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
@@ -240,81 +241,98 @@ public class EvalVisitor extends Visitor {
         node.updateVal((T) stack.peek());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> void endVisit(CastExp<T> node) {
         Object srcVal = stack.pop();
         Class<T> type = node.getType();
-        if (type.equals(Double.class)) {
-            double tgtVal;
-            if (srcVal instanceof Byte) {
-                tgtVal = (double) (Byte) srcVal;
-            } else if (srcVal instanceof Short) {
-                tgtVal = (double) (Short) srcVal;
-            } else if (srcVal instanceof Integer) {
-                tgtVal = (double) (Integer) srcVal;
-            } else if (srcVal instanceof Long) {
-                tgtVal = (double) (Long) srcVal;
-            } else if (srcVal instanceof Float) {
-                tgtVal = (double) (Float) srcVal;
+        if (!TypeUtil.isBoxed(type)) {
+            stack.push(type.cast(srcVal));
+            return;
+        }
+        Class<?> srcType = srcVal.getClass();
+        String castingErrMsg = "cannot cast " + srcVal.getClass() + " to " + type;
+        if (type.equals(Byte.class)) {
+            byte tgtVal;
+            if (TypeUtil.isNumberBoxed(srcType)) {
+                tgtVal = ((Number) srcVal).byteValue();
             } else if (srcVal instanceof Character) {
-                tgtVal = (double) (Character) srcVal;
+                tgtVal = (byte) ((Character) srcVal).charValue();
             } else {
-                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+                throw new RuntimeException(castingErrMsg);
             }
             stack.push(tgtVal);
-        } else if (type.equals(Float.class)) {
-            float tgtVal;
-            if (srcVal instanceof Byte) {
-                tgtVal = (float) (Byte) srcVal;
-            } else if (srcVal instanceof Short) {
-                tgtVal = (float) (Short) srcVal;
-            } else if (srcVal instanceof Integer) {
-                tgtVal = (float) (Integer) srcVal;
-            } else if (srcVal instanceof Long) {
-                tgtVal = (float) (Long) srcVal;
+        } else if (type.equals(Short.class)) {
+            short tgtVal;
+            if (TypeUtil.isNumberBoxed(srcType)) {
+                tgtVal = ((Number) srcVal).shortValue();
             } else if (srcVal instanceof Character) {
-                tgtVal = (float) (Character) srcVal;
+                tgtVal = (short) ((Character) srcVal).charValue();
             } else {
-                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+                throw new RuntimeException(castingErrMsg);
             }
             stack.push(tgtVal);
-        } else if (type.equals(Long.class)) {
-            long tgtVal;
-            if (srcVal instanceof Byte) {
-                tgtVal = (long) (Byte) srcVal;
-            } else if (srcVal instanceof Short) {
-                tgtVal = (long) (Short) srcVal;
-            } else if (srcVal instanceof Integer) {
-                tgtVal = (long) (Integer) srcVal;
-            } else if (srcVal instanceof Character) {
-                tgtVal = (long) (Character) srcVal;
+        } else if (type.equals(Character.class)) {
+            char tgtVal;
+            if (srcType.equals(Byte.class)) {
+                tgtVal = (char) ((Byte) srcVal).byteValue();
+            } else if (srcType.equals(Short.class)) {
+                tgtVal = (char) ((Short) srcVal).shortValue();
+            } else if (srcType.equals(Character.class)) {
+                tgtVal = (Character) srcVal;
+            } else if (srcType.equals(Integer.class)) {
+                tgtVal = (char) ((Integer) srcVal).intValue();
+            } else if (srcType.equals(Long.class)) {
+                tgtVal = (char) ((Long) srcVal).longValue();
+            } else if (srcType.equals(Float.class)) {
+                tgtVal = (char) ((Float) srcVal).floatValue();
+            } else if (srcType.equals(Double.class)) {
+                tgtVal = (char) ((Double) srcVal).doubleValue();
             } else {
-                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+                throw new RuntimeException(castingErrMsg);
             }
             stack.push(tgtVal);
         } else if (type.equals(Integer.class)) {
             int tgtVal;
-            if (srcVal instanceof Byte) {
-                tgtVal = (int) (Byte) srcVal;
-            } else if (srcVal instanceof Short) {
-                tgtVal = (int) (Short) srcVal;
+            if (TypeUtil.isNumberBoxed(srcType)) {
+                tgtVal = ((Number) srcVal).intValue();
             } else if (srcVal instanceof Character) {
-                tgtVal = (int) (Character) srcVal;
+                tgtVal = ((Character) srcVal).charValue();
             } else {
-                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+                throw new RuntimeException(castingErrMsg);
             }
             stack.push(tgtVal);
-        } else if(type.equals(Short.class)) {
-            short tgtVal;
-            if (srcVal instanceof Byte) {
-                tgtVal = (short) (Byte) srcVal;
+        } else if (type.equals(Long.class)) {
+            long tgtVal;
+            if (TypeUtil.isNumberBoxed(srcType)) {
+                tgtVal = ((Number) srcVal).longValue();
+            } else if (srcVal instanceof Character) {
+                tgtVal = ((Character) srcVal).charValue();
             } else {
-                throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+                throw new RuntimeException(castingErrMsg);
+            }
+            stack.push(tgtVal);
+        } else if (type.equals(Float.class)) {
+            float tgtVal;
+            if (TypeUtil.isNumberBoxed(srcType)) {
+                tgtVal = ((Number) srcVal).floatValue();
+            } else if (srcVal instanceof Character) {
+                tgtVal = ((Character) srcVal).charValue();
+            } else {
+                throw new RuntimeException(castingErrMsg);
+            }
+            stack.push(tgtVal);
+        } else if (type.equals(Double.class)) {
+            double tgtVal;
+            if (TypeUtil.isNumberBoxed(srcType)) {
+                tgtVal = ((Number) srcVal).doubleValue();
+            } else if (srcVal instanceof Character) {
+                tgtVal = ((Character) srcVal).charValue();
+            } else {
+                throw new RuntimeException(castingErrMsg);
             }
             stack.push(tgtVal);
         } else {
-            throw new RuntimeException(srcVal.getClass() + " cannot be casted to " + type);
+            throw new RuntimeException(castingErrMsg);
         }
     }
 
@@ -384,26 +402,5 @@ public class EvalVisitor extends Visitor {
 
     private void endVisitTerminalNode(TerminalNode<?> node) {
         stack.push(node.getVal());
-    }
-
-    /* Helper methods. */
-
-    private static Boolean castToBoolean(Object value) {
-        return cast(value, Boolean.class);
-    }
-
-    private static Integer castToInteger(Object value) {
-        return cast(value, Integer.class);
-    }
-
-    private static <T> T cast(Object value, Class<T> type) {
-        validateCast(value, type);
-        return type.cast(value);
-    }
-
-    private static void validateCast(Object value, Class<?> type) {
-        if (!type.isInstance(value)) {
-            throw new RuntimeException(value + " must be subtype of " + type);
-        }
     }
 }

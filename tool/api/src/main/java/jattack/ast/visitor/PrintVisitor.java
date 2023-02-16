@@ -28,6 +28,7 @@ import jattack.ast.stmt.IfStmt;
 import jattack.ast.stmt.Stmt;
 import jattack.ast.stmt.TryStmt;
 import jattack.ast.stmt.WhileStmt;
+import jattack.util.TypeUtil;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -168,9 +169,9 @@ public class PrintVisitor extends Visitor {
         String value = stack.pop();
         String typeStr;
         Class<T> type = node.getType();
-        if (org.csutil.util.TypeUtil.isBoxedPrimitive(type)) {
+        if (TypeUtil.isBoxed(type)) {
             // get primitive type
-            typeStr = org.csutil.util.TypeUtil.boxedToPrimitive(type).getCanonicalName();
+            typeStr = TypeUtil.unbox(type).getCanonicalName();
         } else {
             // general reference types
             typeStr = type.getCanonicalName();
