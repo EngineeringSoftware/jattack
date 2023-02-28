@@ -38,7 +38,7 @@ public class Config {
      * systematic style.
      */
     public static List<Character> chars = Arrays.asList(
-            'a', Character.MAX_VALUE, Character.MIN_VALUE);
+            ' ', '0', 'A', 'z', '~');
 
     /**
      * The byte space that will be explored, enabled if in

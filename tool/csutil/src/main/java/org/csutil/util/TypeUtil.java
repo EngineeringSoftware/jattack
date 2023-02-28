@@ -103,6 +103,12 @@ public class TypeUtil {
                     || Modifier.isStatic(field.getModifiers())) {
                     continue;
                 }
+                // TODO: remove this when jdk fixes the issue on
+                // getting value of Class#componentType
+                if (currClz.getName().equals("java.lang.Class") &&
+                        field.getName().equals("componentType")) {
+                    continue;
+                }
                 try {
                     field.setAccessible(true);
                 } catch (InaccessibleObjectException | SecurityException ignored) {

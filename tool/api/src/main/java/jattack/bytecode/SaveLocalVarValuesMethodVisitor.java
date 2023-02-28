@@ -244,7 +244,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
     }
 
     /**
-     * Data.getFromMemoryValueOfVar();
+     * Data.getFromMemoryValueOfVar(String);
      */
     private void invokeGetFromMemoryValueOfVar() {
         super.visitMethodInsn(

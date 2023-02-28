@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'jattack'
-version '0.83.14'
+version '0.83.18'
 
 repositories {
     mavenCentral()
@@ -20,7 +20,7 @@ repositories {
 
 dependencies {
     implementation 'csutil:csutil'
-    implementation 'com.github.javaparser:javaparser-core:3.22.1'
+    implementation 'com.github.javaparser:javaparser-core:3.25.0'
     implementation 'io.github.tudo-aqua:z3-turnkey:4.8.10'
     implementation 'org.ow2.asm:asm:9.4'
     implementation 'org.ow2.asm:asm-tree:9.4'

@@ -162,7 +162,7 @@ public class FieldAnalyzer {
                 // TODO: shadowing? For now we assume no shadowing
                 //  happens. We ignore the field if it is
                 //  shadowed.
-                return;
+                continue;
             }
             flds.add(new Fld(field, obj));
         }
