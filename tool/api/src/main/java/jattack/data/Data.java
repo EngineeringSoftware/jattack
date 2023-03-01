@@ -411,10 +411,10 @@ public class Data {
      * <p>
      * Reset before per eval() through instrumentation.
      */
-    private static Map<String, Object> memory;
+    private static Memory memory;
 
     public static Map<String, Object> getMemory() {
-        return memory;
+        return memory.getTable();
     }
 
     public static boolean memoryContainsVar(String name) {
@@ -422,25 +422,24 @@ public class Data {
     }
 
     public static void addToMemory(String name, Object val) {
-        if (val == null) {
-            return;
-        }
-        String desc = Type.getDescriptor(val.getClass());
-        Object valToPut;
-
-        if (TypeUtil.isTypeDescSupported(desc)) {
-            valToPut = val; // No! We do not want a deep copy
-        } else {
-            return;
-        }
-        memory.put(name, valToPut);
+        memory.put(name, val);
     }
 
     // Used through instrumentation, don't believe your IDE!
     public static void resetMemory() {
-        memory = new HashMap<>();
+        if (memory == null) {
+            memory = new Memory();
+        } else {
+            memory.reset();
+        }
     }
 
+    /**
+     * Gets the runtime value of the given variable. Returning
+     * {@code null} means either the value is {@code null} or the
+     * given variable does not exist in memory.
+     * TODO: wrap null in a special class
+     */
     public static Object getFromMemoryValueOfVar(String name) {
         return memory.get(name);
     }
@@ -455,9 +454,13 @@ public class Data {
 
     private static Set<String> getVarsOfTypeFromMemory(Class<?> type) {
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
-        for (Map.Entry<String, Object> e : memory.entrySet()) {
+        for (Map.Entry<String, Object> e : memory.getTable().entrySet()) {
             Object val = e.getValue();
-            // null can be assigned to any reference type
+            if (TypeUtil.isBoxed(type) && val == null) {
+                // null cannot be assigned to any primitive type
+                continue;
+            }
+            // null can be assigned to any referencey type
             if (val == null || type.isAssignableFrom(val.getClass())) {
                 ids.add(e.getKey());
             }

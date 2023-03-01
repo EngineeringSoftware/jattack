@@ -22,8 +22,6 @@ public class SkTestLocalVariableShadowsField {
 
     @Argument(1)
     public static String arg1() {
-        return "hello"; // TODO: if we set null, the local variable d
-        // will not be saved and we will actually save field d in
-        // memory, which causes casting error.
+        return null;
     }
 }

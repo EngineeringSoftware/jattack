@@ -38,15 +38,15 @@ import jattack.ast.stmt.WhileStmt;
 import jattack.util.TypeUtil;
 
 import java.lang.reflect.Array;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.Stack;
 
 /**
  * Visitor to evaluate a AST node.
  */
 public class EvalVisitor extends Visitor {
 
-    private final Deque<Object> stack = new ArrayDeque<>();
+    // We do not use ArrayDeque as we need to push null onto stack.
+    private final Stack<Object> stack = new Stack<>();
 
     /**
      * Short circuit flag.
