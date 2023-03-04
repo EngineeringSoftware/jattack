@@ -75,7 +75,6 @@ public class StaticGenMethodVisitor extends MethodVisitor {
 
     private void saveLocalVarsAvialHere(int holeId, int offset) {
         // See which variables are available at this point
-        initLocalVarsListAtHole(holeId);
         for (LocalVariableNode lvn : mn.localVariables) {
             saveLocalVarIfItIsAvailAtOffset(lvn, holeId, offset);
         }
@@ -113,21 +112,17 @@ public class StaticGenMethodVisitor extends MethodVisitor {
         saveLocalVarAtHole(holeId, name, lvn.desc);
     }
 
-    private void initLocalVarsListAtHole(int holeId) {
-        Data.addToVarsByHole(holeId);
-    }
-
     private void saveLocalVarAtHole(int holeId, String name, String desc) {
         if (!TypeUtil.isTypeDescSupported(desc)) {
             // We do not save any local variables with type not
             // supported yet.
             return;
         }
-        if (TypeUtil.isPrimitive(desc)) {
-            // Wrap primitives
-            desc = TypeUtil.primitiveDescToWrappedDesc(desc);
+        if (TypeUtil.isDescPrimitive(desc)) {
+            // Box primitives
+            desc = TypeUtil.primitiveDescToBoxedDesc(desc);
         }
-        Data.addToVarsByHole(holeId, new Symbol(name, desc));
+        Data.addToSymbolsByHole(holeId, new Symbol(name, desc));
     }
 
     /**

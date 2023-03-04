@@ -39,13 +39,13 @@ public abstract class IdExp<T> extends LHSExp<T>
 
     @Override
     public void updateVal(T val) {
-        Data.addToMemory(id, val);
+        Data.updateMemory(id, val);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T getVal() {
-        return (T) Data.getFromMemoryValueOfVar(id);
+        return (T) Data.getFromMemoryValueOfSymbol(id);
     }
 
     @Override
@@ -77,7 +77,7 @@ public abstract class IdExp<T> extends LHSExp<T>
     private UniqueList<String> ids() {
         if (ids == null) {
             // infer identifiers
-            Set<String> availableIds = Data.getVarsOfType(getType());
+            Set<String> availableIds = Data.getSymbolsOfType(getType());
             for (String id : excludedIds) {
                 availableIds.remove(id);
             }

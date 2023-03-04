@@ -128,9 +128,9 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             super.visitLdcInsn(var.getName());
             invokeGetFromMemoryValueOfVar();
             // type casting
-            if (TypeUtil.isPrimitive(desc)) {
+            if (TypeUtil.isDescPrimitive(desc)) {
                 // cast to boxed types and then unbox
-                super.visitTypeInsn(Opcodes.CHECKCAST, TypeUtil.primitiveDescToWrappedInternName(desc));
+                super.visitTypeInsn(Opcodes.CHECKCAST, TypeUtil.primitiveDescToBoxedInternName(desc));
                 invokeUnboxing(desc);
             } else {
                 super.visitTypeInsn(Opcodes.CHECKCAST, TypeUtil.desc2Intern(desc));
@@ -153,11 +153,12 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             /*
              * Code we are effectively inserting here:
              * XLOAD index: [empty] -> value
-             * Data.addToMemory(name, value);
+             * Data.addToMemory(name, desc, value);
              */
             super.visitLdcInsn(var.getName());
+            super.visitLdcInsn(desc);
             loadLocalVar(desc, var.getIndex());
-            if (TypeUtil.isPrimitive(desc)) {
+            if (TypeUtil.isDescPrimitive(desc)) {
                 invokeBoxing(desc); // boxing
             }
             invokeAddToMemory();
@@ -199,14 +200,14 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      * @param primitiveDesc the descriptor of the given primitive type
      */
     private void invokeUnboxing(String primitiveDesc) {
-        if (!TypeUtil.isPrimitive(primitiveDesc)) {
+        if (!TypeUtil.isDescPrimitive(primitiveDesc)) {
             throw new RuntimeException(primitiveDesc + " is not a primitive type!");
         }
         String primitiveName = TypeUtil.primitiveDescToName(primitiveDesc);
-        String wrappedInternName = TypeUtil.primitiveDescToWrappedInternName(primitiveDesc);
+        String boxedInternName = TypeUtil.primitiveDescToBoxedInternName(primitiveDesc);
         super.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                wrappedInternName,
+                boxedInternName,
                 primitiveName + "Value", // e.g. intValue
                 "()" + primitiveDesc,
                 false); // boxing
@@ -218,16 +219,16 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      * @param primitiveDesc the descriptor of the given primitive type
      */
     private void invokeBoxing(String primitiveDesc) {
-        if (!TypeUtil.isPrimitive(primitiveDesc)) {
+        if (!TypeUtil.isDescPrimitive(primitiveDesc)) {
             throw new RuntimeException(primitiveDesc + " is not a primitive type!");
         }
-        String wrappedInternName = TypeUtil.primitiveDescToWrappedInternName(primitiveDesc);
-        String wrappedDesc = String.format("L%s;", wrappedInternName);
+        String boxedInternName = TypeUtil.primitiveDescToBoxedInternName(primitiveDesc);
+        String boxedDesc = TypeUtil.primitiveDescToBoxedDesc(primitiveDesc);
         super.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                wrappedInternName,
+                boxedInternName,
                 "valueOf",
-                String.format("(%s)%s", primitiveDesc, wrappedDesc),
+                String.format("(%s)%s", primitiveDesc, boxedDesc),
                 false); // boxing
     }
 
@@ -250,8 +251,8 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
         super.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 Constants.DATA_CLZ_INTERN_NAME,
-                Constants.GET_FROM_MEMORY_VALUE_OF_VAR_METH_NAME,
-                Constants.GET_FROM_MEMORY_VALUE_OF_VAR_METH_DESC,
+                Constants.GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_NAME,
+                Constants.GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_DESC,
                 false);
     }
 

@@ -38,7 +38,7 @@ public class StaticFieldAnalyzer {
             // accessed from every hole in the method.
             for (int hole : Data.getHolesOfMethod(method)) {
                 for (Field field : fields) {
-                    Data.addToVarsByHole(hole, createSymbolFromField(field));
+                    Data.addToSymbolsByHole(hole, createSymbolFromField(field));
                 }
             }
         }
@@ -128,8 +128,8 @@ public class StaticFieldAnalyzer {
         Class<?> type = field.getType();
         String desc = Type.getDescriptor(type);
         if (type.isPrimitive()) {
-            // wrap primitives
-            desc = TypeUtil.primitiveDescToWrappedDesc(desc);
+            // box primitives
+            desc = TypeUtil.primitiveDescToBoxedDesc(desc);
         }
         return new Symbol(field.getName(), desc);
     }

@@ -121,6 +121,9 @@ public class RefArrAccessExp<E, A> extends LHSExp<E> {
         A arr = id.evaluate();
         int i = index.evaluate();
         Array.set(arr, i, val);
-        Data.addToMemory(id.getJavaStr(), arr);
+        if (!(id instanceof LHSExp)) {
+            throw new RuntimeException("Expected id is a LHSExp but it is " + id.getClass());
+        }
+        ((LHSExp<A>) id).updateVal(arr);
     }
 }

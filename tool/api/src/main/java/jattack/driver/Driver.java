@@ -236,14 +236,14 @@ public class Driver {
                     initialTmplSrcCode,
                     false);
             // Get local variables available for every hole populating
-            // {@code Data.varsByHole}.
+            // {@code Data.symbolsByHole}.
             for (Map.Entry<String, byte[]> entry : compiler.getClassBytes().entrySet()) {
                 String className = entry.getKey();
                 byte[] bytes = entry.getValue();
                 VariableAnalyzer.staticAnalyze(className, bytes);
             }
             // Get fields available from every hole, also saving into
-            // {@code Data.varsByHole}.
+            // {@code Data.symbolsByHole}.
             allClassNamesInTmpl = compiler.getCompiledClassNames();
             allClzes = TypeUtil.loadClzes(allClassNamesInTmpl, true, cl);
             new StaticFieldAnalyzer(allClzes).staticAnalyze();

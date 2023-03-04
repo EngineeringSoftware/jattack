@@ -1,7 +1,5 @@
 package jattack.data;
 
-import org.objectweb.asm.Type;
-
 import jattack.util.TypeUtil;
 
 import java.util.HashMap;
@@ -33,13 +31,13 @@ public class Memory {
 
     public static final Null NULL = new Null();
 
-    private Map<String, Object> table;
+    private Map<String, RuntimeSymbol> table;
 
     public Memory() {
-        reset();
+        table = new HashMap<>();
     }
 
-    public Map<String, Object> getTable() {
+    public Map<String, RuntimeSymbol> getTable() {
         return table;
     }
 
@@ -47,14 +45,23 @@ public class Memory {
         return table.containsKey(name);
     }
 
-    public void put(String name, Object val) {
-        if (val != null) {
-            String desc = Type.getDescriptor(val.getClass());
-            if (!TypeUtil.isTypeDescSupported(desc)) {
-                return;
-            }
+    public void put(String name, String desc, Object val) {
+        if (!TypeUtil.isTypeDescSupported(desc)) {
+            return;
         }
-        table.put(name, val); // No! We do not want a deep copy
+        if (TypeUtil.isDescPrimitive(desc)) {
+            // as we allow only boxed types inside
+            desc = TypeUtil.primitiveDescToBoxedDesc(desc);
+        }
+        table.put(name, new RuntimeSymbol(name, desc, val)); // No! We do not want a deep copy
+    }
+
+    public void updateValue(String name, Object val) {
+        if (!table.containsKey(name)) {
+            throw new NoSuchElementException(
+                    "Symbol " + name + " does not exist in memory!");
+        }
+        table.get(name).setValue(val);
     }
 
     /**
@@ -64,15 +71,15 @@ public class Memory {
      * @throws NoSuchElementException if the given symbol does not
      * exist in memory
      */
-    public Object get(String name) {
+    public Object getValue(String name) {
         if (!table.containsKey(name)) {
             throw new NoSuchElementException(
                     "Symbol " + name + " does not exist in memory!");
         }
-        return table.get(name);
+        return table.get(name).getValue();
     }
 
     public void reset() {
-        table = new HashMap<>();
+        table.clear();
     }
 }

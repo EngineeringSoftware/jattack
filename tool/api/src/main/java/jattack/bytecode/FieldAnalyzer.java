@@ -83,7 +83,10 @@ public class FieldAnalyzer {
             Field field = fld.field;
             Object obj = fld.obj;
             try {
-                Data.addToMemory(field.getName(), field.get(obj));
+                String name = field.getName();
+                String desc = TypeUtil.bin2Desc(field.getType().getName());
+                Object value = field.get(obj);
+                Data.addToMemory(name, desc, value);
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
@@ -98,7 +101,7 @@ public class FieldAnalyzer {
                 continue;
             }
             Object obj = fld.obj;
-            Object val = Data.getFromMemoryValueOfVar(field.getName());
+            Object val = Data.getFromMemoryValueOfSymbol(field.getName());
             try {
                 field.set(obj, val);
             } catch (IllegalAccessException e) {
@@ -158,7 +161,7 @@ public class FieldAnalyzer {
 
             // Save the field.
             String name = field.getName();
-            if (Data.memoryContainsVar(name)) {
+            if (Data.memoryContainsSymbol(name)) {
                 // TODO: shadowing? For now we assume no shadowing
                 //  happens. We ignore the field if it is
                 //  shadowed.

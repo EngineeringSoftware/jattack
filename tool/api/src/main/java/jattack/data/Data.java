@@ -1,6 +1,5 @@
 package jattack.data;
 
-import org.objectweb.asm.Type;
 import jattack.Config;
 import jattack.ast.Node;
 import jattack.bytecode.Symbol;
@@ -413,16 +412,20 @@ public class Data {
      */
     private static Memory memory;
 
-    public static Map<String, Object> getMemory() {
+    public static Map<String, RuntimeSymbol> getMemory() {
         return memory.getTable();
     }
 
-    public static boolean memoryContainsVar(String name) {
+    public static boolean memoryContainsSymbol(String name) {
         return memory.containsKey(name);
     }
 
-    public static void addToMemory(String name, Object val) {
-        memory.put(name, val);
+    public static void addToMemory(String name, String desc, Object val) {
+        memory.put(name, desc, val);
+    }
+
+    public static void updateMemory(String name, Object val) {
+        memory.updateValue(name, val);
     }
 
     // Used through instrumentation, don't believe your IDE!
@@ -435,34 +438,52 @@ public class Data {
     }
 
     /**
-     * Gets the runtime value of the given variable. Returning
-     * {@code null} means either the value is {@code null} or the
-     * given variable does not exist in memory.
-     * TODO: wrap null in a special class
+     * Gets the runtime value of the given symbol (field or local
+     * variable). Returning {@code null} means the value is
+     * {@code null}. If the symbol is not found in memory, an
+     * {@link NoSuchElementException} will be thrown.
      */
-    public static Object getFromMemoryValueOfVar(String name) {
-        return memory.get(name);
+    public static Object getFromMemoryValueOfSymbol(String name) {
+        return memory.getValue(name);
     }
 
-    public static Set<String> getVarsOfType(Class<?> type) {
-        if (Config.staticGen) {
-            return staticGetVarsOfType(type);
-        } else {
-            return getVarsOfTypeFromMemory(type);
+    public static Set<String> getSymbolsOfType(Class<?> type) {
+        try {
+            if (Config.staticGen) {
+                return staticGetSymbolsOfType(type);
+            } else {
+                return getSymbolsOfTypeFromMemory(type);
+            }
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private static Set<String> getVarsOfTypeFromMemory(Class<?> type) {
+    private static Set<String> getSymbolsOfTypeFromMemory(Class<?> assignedType)
+            throws ClassNotFoundException {
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
-        for (Map.Entry<String, Object> e : memory.getTable().entrySet()) {
-            Object val = e.getValue();
-            if (TypeUtil.isBoxed(type) && val == null) {
-                // null cannot be assigned to any primitive type
-                continue;
-            }
-            // null can be assigned to any referencey type
-            if (val == null || type.isAssignableFrom(val.getClass())) {
-                ids.add(e.getKey());
+        for (RuntimeSymbol symbol : memory.getTable().values()) {
+            String name = symbol.getName();
+            Object value = symbol.getValue();
+            // if (value == null) {
+            //     // No way to check runtime type for null value
+            //     String sDesc = symbol.getDesc();
+            //     Class<?> sDeclType = Class.forName(TypeUtil.desc2Bin(sDesc));
+            //     if (assignedType.isAssignableFrom(sDeclType)) {
+            //         ids.add(name);
+            //     } else {
+            //         continue;
+            //     }
+            // }
+            // // We check runtime type rather than declaring type
+            // Class<?> sRuntimeType = value.getClass();
+            // if (assignedType.isAssignableFrom(sRuntimeType)) {
+            //     ids.add(name);
+            // }
+            String sDesc = symbol.getDesc();
+            Class<?> sDeclType = Class.forName(TypeUtil.desc2Bin(sDesc));
+            if (assignedType.isAssignableFrom(sDeclType)) {
+                ids.add(name);
             }
         }
         return ids;
@@ -471,24 +492,21 @@ public class Data {
     /*---------------------- Static generation ---------------------*/
 
     /**
-     * hole id -> available variables (fields and local variables)
+     * hole id -> available symbols (fields and local variables)
      */
-    private static Map<Integer, Set<Symbol>> varsByHole = new HashMap<>();
+    private static Map<Integer, Set<Symbol>> symbolsByHole = new HashMap<>();
 
-    public static Map<Integer, Set<Symbol>> getVarsByHole() {
-        return varsByHole;
+    public static Map<Integer, Set<Symbol>> getSymbolsByHole() {
+        return symbolsByHole;
     }
 
-    public static void addToVarsByHole(int hole) {
-        varsByHole.put(hole, new HashSet<>());
+    public static void addToSymbolsByHole(int hole, Symbol symbol) {
+        symbolsByHole.putIfAbsent(hole, new HashSet<>());
+        symbolsByHole.get(hole).add(symbol);
     }
 
-    public static void addToVarsByHole(int hole, Symbol var) {
-        varsByHole.get(hole).add(var);
-    }
-
-    public static void resetVarsByHole() {
-        varsByHole = new HashMap<>();
+    public static void resetSymbolsByHole() {
+        symbolsByHole = new HashMap<>();
     }
 
     /**
@@ -522,20 +540,19 @@ public class Data {
         currHoleId = holeId;
     }
 
-    public static Set<String> staticGetVarsOfType(Class<?> type) {
-        return staticGetVarsOfType(type, currHoleId);
+    private static Set<String> staticGetSymbolsOfType(Class<?> type)
+            throws ClassNotFoundException {
+        return staticGetSymbolsOfType(type, currHoleId);
     }
-    public static Set<String> staticGetVarsOfType(Class<?> type, int hole) {
-        Set<Symbol> localVars = varsByHole.get(hole);
+
+    private static Set<String> staticGetSymbolsOfType(Class<?> type, int hole)
+            throws ClassNotFoundException {
+        Set<Symbol> avilableSymbols = symbolsByHole.get(hole);
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
-        for (Symbol v : localVars) {
-            try {
-                Class<?> vType = Class.forName(TypeUtil.desc2Bin(v.getDesc()));
-                if (type.isAssignableFrom(vType)) {
-                    ids.add(v.getName());
-                }
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+        for (Symbol s : avilableSymbols) {
+            Class<?> sType = Class.forName(TypeUtil.desc2Bin(s.getDesc()));
+            if (type.isAssignableFrom(sType)) {
+                ids.add(s.getName());
             }
         }
         return ids;

@@ -80,10 +80,10 @@ public class Constants {
     public static final String RESET_MEMORY_METH_DESC = "()V";
     public static final String ADD_TO_MEMORY_METH_NAME = "addToMemory";
     public static final String ADD_TO_MEMORY_METH_DESC =
-            String.format("(%s%s)V", STRING_TYPE_DESC, OBJECT_TYPE_DESC);
-    public static final String GET_FROM_MEMORY_VALUE_OF_VAR_METH_NAME =
-            "getFromMemoryValueOfVar";
-    public static final String GET_FROM_MEMORY_VALUE_OF_VAR_METH_DESC =
+            String.format("(%s%s%s)V", STRING_TYPE_DESC, STRING_TYPE_DESC, OBJECT_TYPE_DESC);
+    public static final String GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_NAME =
+            "getFromMemoryValueOfSymbol";
+    public static final String GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_DESC =
             String.format("(%s)%s", STRING_TYPE_DESC, OBJECT_TYPE_DESC);
     public static final Set<String> API_NAMES =
             Arrays.stream(Boom.class.getDeclaredMethods())
