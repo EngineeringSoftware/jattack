@@ -6,7 +6,11 @@ import static jattack.Boom.*;
 
 public class SkTestHoleInStaticInitializer {
 
-    final static int f = makeInt();
+    static int f = makeInt();
+
+    static {
+        f = intVal().eval();
+    }
 
     @Entry
     public static int m() {

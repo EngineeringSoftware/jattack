@@ -32,6 +32,7 @@ public class SaveLocalVarValuesClassVisitor extends ClassVisitor {
                 mv,
                 TypeUtil.bin2Intern(classBinName),
                 TypeUtil.toFullMethodName(classBinName, name, desc),
-                (access & Opcodes.ACC_STATIC) != 0);
+                (access & Opcodes.ACC_STATIC) != 0,
+                name.equals("<init>"));
     }
 }

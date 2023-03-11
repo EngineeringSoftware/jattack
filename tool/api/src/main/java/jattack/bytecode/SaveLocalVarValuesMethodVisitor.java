@@ -21,17 +21,31 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
     private final String m_fullMethodName;
     private final Deque<Integer> m_offsets;
     private final boolean m_isStatic;
+    private final boolean m_isConstructor;
+
+    /**
+     * Mark if "this" has been initialized, which is not done before
+     * invoksepcial is finished.
+     */
+    private boolean thisInitialized;
 
     public SaveLocalVarValuesMethodVisitor(
             MethodVisitor mv,
             String className,
             String fullMethodName,
-            boolean isStatic) {
+            boolean isStatic,
+            boolean isConstructor) {
         super(Constants.ASM_VERSION, mv);
         m_className = className;
         m_fullMethodName = fullMethodName;
         m_offsets = Data.getOffsetsOfEvalsOfMethod(m_fullMethodName);
         m_isStatic = isStatic;
+        m_isConstructor = isConstructor;
+        if (!m_isConstructor) {
+            // If not in constrcutor, "this" must have been
+            // initialized.
+            thisInitialized = true;
+        }
     }
 
     @Override
@@ -41,6 +55,14 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             String name,
             String desc,
             boolean isInterface) {
+        // Detect the first invokespecial in the constructor, which
+        // should be the one that initializes the instance
+        if (!thisInitialized
+                && opcode == Opcodes.INVOKESPECIAL
+                && name.equals("<init>")) {
+            thisInitialized = true;
+        }
+
         // Match eval(I)
         // TODO: what if there are other eval(I) except ours?
         if (opcode == Opcodes.INVOKEVIRTUAL
@@ -93,9 +115,12 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             super.visitLdcInsn(Type.getObjectType(m_className));
             invokeFindFieldsForClass();
         } else {
-            // Get the fields accessible by "this"
-            super.visitVarInsn(Opcodes.ALOAD, 0);
-            invokeFindFieldsForObject();
+            // not do if "this" has not been initialized
+            if (thisInitialized) {
+                // Get the fields accessible by "this"
+                super.visitVarInsn(Opcodes.ALOAD, 0);
+                invokeFindFieldsForObject();
+            }
         }
         invokeSaveFieldValues();
     }
@@ -146,6 +171,10 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      */
     private void saveLocalVarValues(Set<Var> availableVars, int offset) {
         for (Var var : availableVars) {
+            if (!thisInitialized && var.getName().equals("this")) {
+                // cannot save "this" as it has not been initialized
+                continue;
+            }
             String desc = var.getDesc();
             if (!TypeUtil.isTypeDescSupported(desc)) {
                 throw new RuntimeException("We should not have collected a local variables of this type: " + desc);
@@ -281,7 +310,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
     }
 
     /**
-     * {@code FieldAnalyzer.findField(Object);}
+     * {@code FieldAnalyzer.findFields(Object);}
      */
     private void invokeFindFieldsForObject() {
         super.visitMethodInsn(
@@ -293,7 +322,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
     }
 
     /**
-     * {@code FieldAnalyzer.findField(Class<?>);}
+     * {@code FieldAnalyzer.findFields(Class<?>);}
      */
     private void invokeFindFieldsForClass() {
         super.visitMethodInsn(

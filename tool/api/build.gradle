@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'jattack'
-version '0.83.21'
+version '0.83.23'
 
 repositories {
     mavenCentral()
@@ -65,6 +65,7 @@ task csutilJar(type: ShadowJar) {
         // Include only csutil
         include(dependency('csutil:csutil'))
         include(dependency('org.ow2.asm:asm'))
+        include(dependency('org.ow2.asm:asm-tree'))
         exclude('module-info.class')
         relocate('org.objectweb.asm', 'jattack.asm')
     }

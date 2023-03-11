@@ -1,5 +1,6 @@
 package jattack.transformer.visitor;
 
+import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
@@ -19,6 +20,14 @@ public class RenameVisitor extends ModifierVisitor<Void> {
 
     @Override
     public Visitable visit(SimpleName name, Void arg) {
+        if (name.getIdentifier().equals(inClzName)) {
+            name.setIdentifier(outClzName);
+        }
+        return super.visit(name, arg);
+    }
+
+    @Override
+    public Visitable visit(Name name, Void arg) {
         if (name.getIdentifier().equals(inClzName)) {
             name.setIdentifier(outClzName);
         }
