@@ -26,7 +26,7 @@ public class WrappedChecksumTest {
     public void init() {
         checksum = new WrappedChecksum();
         refChecksum = WrappedChecksum.newChecksum();
-        // Log.setLevel(Log.Level.DEBUG);
+        Log.setLevel(Log.Level.DEBUG);
     }
 
     @Test
@@ -318,16 +318,19 @@ public class WrappedChecksumTest {
 
         checksum.update(l);
 
-        refChecksum.update(0); // l
-        refChecksum.update(1); // l -> l[0]
-        refChecksum.update(1); // l[0][0], i.e., 1
-        refChecksum.update(2); // l -> l[1]
-        refChecksum.update(2); // l[1][0], i.e., 2
-        refChecksum.update(3); // l[1][1], i.e., 3
-        refChecksum.update(3); // l -> l[2]
-        refChecksum.update(4); // l[2][0], i.e., 4
-        refChecksum.update(5); // l[2][1], i.e., 5
-        refChecksum.update(6); // l[2][2], i.e., 6
+        refChecksum.update(ByteBufferUtil.toByteBuffer(0)); // l
+        refChecksum.update(ByteBufferUtil.toByteBuffer(1)); // l -> l[0]
+        refChecksum.update(ByteBufferUtil.toByteBuffer(1)); // l[0][0], i.e., 1
+        refChecksum.update(ByteBufferUtil.toByteBuffer(2)); // l -> l[1]
+        refChecksum.update(ByteBufferUtil.toByteBuffer(2)); // l[1][0], i.e., 2
+        refChecksum.update(ByteBufferUtil.toByteBuffer(3)); // l[1][1], i.e., 3
+        refChecksum.update(ByteBufferUtil.toByteBuffer(3)); // l -> l[2]
+        refChecksum.update(ByteBufferUtil.toByteBuffer(4)); // l[2][0], i.e., 4
+        refChecksum.update(ByteBufferUtil.toByteBuffer(5)); // l[2][1], i.e., 5
+        refChecksum.update(ByteBufferUtil.toByteBuffer(6)); // l[2][2], i.e., 6
+
+        Assert.assertEquals("ListOfList checksum.",
+                            refChecksum.getValue(), checksum.getValue());
     }
 
     @Test
@@ -512,6 +515,38 @@ public class WrappedChecksumTest {
                 refChecksum.getValue(), checksum.getValue());
     }
 
+    @Test
+    public void testMultipleEdgesBetweenTwoObjectsInList() {
+        F f = new F();
+        List<F> l = List.of(f, f);
+
+        checksum.update(l);
+
+        refChecksum.update(ByteBufferUtil.toByteBuffer(0)); // l
+        // l[0]
+        refChecksum.update(ByteBufferUtil.toByteBuffer(1)); // l -> l[0]
+        refChecksum.update(ByteBufferUtil.toByteBuffer(l.get(0).fi)); // l[0].fi
+        // l[1]
+        refChecksum.update(ByteBufferUtil.toByteBuffer(1)); // l -> l[1]
+
+        Assert.assertEquals("MultipleEdgesBetweenTwoObjectsInList checksum.",
+                            refChecksum.getValue(), checksum.getValue());
+    }
+
+    @Test
+    public void testMultipleEdgesBetweenTwoObjectsInFields() {
+        ClassWithTwoSameFields cwtsf = new ClassWithTwoSameFields();
+        checksum.update(cwtsf);
+
+        refChecksum.update(ByteBufferUtil.toByteBuffer(0)); // cwtsf
+        refChecksum.update(ByteBufferUtil.toByteBuffer(1)); // cwtsf -> cwtsf.f1
+        refChecksum.update(ByteBufferUtil.toByteBuffer(cwtsf.f1.fi)); // cwtsf.f1.fi
+        refChecksum.update(ByteBufferUtil.toByteBuffer(1)); // cwtsf -> cwtsf.f2
+
+        Assert.assertEquals("MultipleEdgesBetweenTwoObjectsInFields checksum.",
+                            refChecksum.getValue(), checksum.getValue());
+    }
+
     /************************
        Classes for testing.
     *************************/
@@ -542,6 +577,17 @@ public class WrappedChecksumTest {
         ClassWithIgnoredClassField() {
             e = new RuntimeException("Warning: Nuclear missile launched.");
             i = 1;
+        }
+    }
+
+    private static class ClassWithTwoSameFields {
+        F f1;
+        F f2;
+
+        ClassWithTwoSameFields() {
+            F f = new F();
+            f1 = f;
+            f2 = f;
         }
     }
 

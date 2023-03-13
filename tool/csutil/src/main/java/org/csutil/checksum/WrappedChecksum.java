@@ -240,11 +240,11 @@ public class WrappedChecksum {
                 continue;
             }
             if (visited.contains(objWH)) {
-                if (objWH.secondSeen) {
+                if (!objWH.startedChecksum) {
                     // We just need to encode the edge but should not
                     // explore the object anymore
+                    Log.debug("Second edge to " + objWH.obj.getClass().getName());
                     updateObjectToObjectEdge(currIdsByObj, objWH, currChecksum);
-                    Log.debug("Second seen " + objWH.obj.getClass().getName());
                     stack.pop();
                     continue;
                 }
@@ -262,6 +262,7 @@ public class WrappedChecksum {
                     Log.debug("Save the hash of element into sum");
                     checksumStackLevel.containerLevel.incSum(checksumStackLevel.getValue());
                 }
+                // Done with the object so we can pop it out
                 stack.pop();
                 continue;
             }
@@ -269,6 +270,7 @@ public class WrappedChecksum {
             updateObjectToObjectEdge(currIdsByObj, objWH, currChecksum);
             // mark visited
             visited.add(objWH);
+            objWH.startedChecksum = true;
             if (isContainer(obj)) {
                 updateContainer(stack, visited, currIdsByObj,
                                 checksumStack, objWH, currChecksum,
@@ -313,15 +315,9 @@ public class WrappedChecksum {
             // add edge now because we did not have a chance to encode
             // the edge into checksum later
             updateObjectToObjectEdge(idsByObj, objWH, checksum);
-            // Avoid visiting one of the ignored types
+            // Avoid visiting any ignored types
             Log.debug("Ignore " + obj.getClass().getName());
             return;
-        }
-        // other objects, including containers
-        if (visited.contains(objWH)) {
-            // Set a special flag that indicates we want to encode the
-            // edge into checksum.
-            objWH.secondSeen = true;
         }
         // Set flag
         objWH.isUnorderedContainer = isUnorderedContainer(obj);
@@ -358,6 +354,7 @@ public class WrappedChecksum {
                 Object elem = revStack.pop();
                 pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
             }
+            return;
         }
         // Collection
         if (container instanceof Collection) {
@@ -392,6 +389,7 @@ public class WrappedChecksum {
                 Object elem = revStack.pop();
                 pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
             }
+            return;
         }
         // Map
         if (container instanceof Map) {
@@ -426,9 +424,11 @@ public class WrappedChecksum {
                 Object elem = revStack.pop();
                 pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
             }
+            return;
         }
         if (container instanceof Map.Entry) {
             updateMapEntry(stack, visited, idsByObj, objWH, checksum, ignoreJavaClasses);
+            return;
         }
     }
 
@@ -663,9 +663,9 @@ public class WrappedChecksum {
     private static final class ObjectWithHash {
         private final Object obj;
         private final int hash;
-        private boolean secondSeen;
         private final boolean isElementOfUnorderedContainer;
         private boolean isUnorderedContainer;
+        private boolean startedChecksum;
 
         private ObjectWithHash(
                 Object object,
