@@ -95,6 +95,9 @@ public class Constants {
     public static final String WRITE_TRACKING_RESULTS_METHOD =
             "$_" + TOOL_NAME + "_writeTrackingResults";
     public static final String STATIC_INITIALIZER_COPY_METHOD = "clinit$copy";
+    public static final String ADD_CLASS_INIT_METH_NAME = "addClassInit";
+    public static final String ADD_CLASS_INIT_METH_DESC =
+                String.format("(%s)V", STRING_TYPE_DESC);
 
     /*--------------------------- Variables. -----------------------*/
 

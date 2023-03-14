@@ -29,6 +29,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,6 +74,7 @@ public class Driver {
     private static Map<String, Map<String, Object>> immutableStaticFieldInitialValues; // {class name, {field name, field value}}
     private static Set<String> allClassNamesInTmpl; // including all nested classes
     private static Set<Class<?>> allClzes; // including all nested classes
+    private static List<Class<?>> allClzesInInitOrder; // all classes including all nested classes, orderred by initialization order
     private static String tmplClzFullName;
     private static String tmplClzSimpleName;
     private static String[] argumentMethodNames;
@@ -330,10 +332,26 @@ public class Driver {
         allClassNamesInTmpl = compiler.getCompiledClassNames();
         tmplClz = TypeUtil.loadClz(tmplClzFullName);
         allClzes = TypeUtil.loadClzes(allClassNamesInTmpl);
+        orderAllClzesByInit();
         entryMethod = getEntryMethod(tmplClz);
         argMethods = getArgumentMethods(tmplClz);
         argsMethod = getArgsMethod(tmplClz);
         saveInitialTmplStatus();
+    }
+
+    private static void orderAllClzesByInit() throws ClassNotFoundException {
+        Data.finishRecordingClassInitOrder();
+        allClzesInInitOrder = new ArrayList<>();
+        for (String className : Data.getClassInitOrder()) {
+            allClzesInInitOrder.add(TypeUtil.loadClz(className));
+        }
+        // add those missing classes that do not have static
+        // initializers and thus are not included in data above.
+        for (Class<?> clz : allClzes) {
+            if (!Data.hasStaticInitializer(clz.getName())) {
+                allClzesInInitOrder.add(clz);
+            }
+        }
     }
 
     private static void recoverInitialTmplClass() {
@@ -398,6 +416,11 @@ public class Driver {
 
             // Execute the entry method
             executeEntryMethod(receiver, args);
+
+            if (i + 1 == Config.nInvocations) {
+                // Done already!
+                break;
+            }
 
             // We want to execute with full iterations when we turn on
             // Config.mimicExecution for testing; thus we skip all
@@ -654,10 +677,12 @@ public class Driver {
      */
     private static void recoverInitialTmplStatus()
             throws IllegalAccessException, NoSuchFieldException,
-            NoSuchMethodException, InvocationTargetException {
-        // TODO: the order matters we should follow the original order
-        //  of the class loaded to re-initialize them.
-        for (Class<?> clz : allClzes) {
+            NoSuchMethodException, InvocationTargetException,
+            ClassNotFoundException {
+        // reinitialize class in the order that they had been
+        // initialized
+        for (Class<?> clz : allClzesInInitOrder) {
+            // Log.debug("recover " + clz);
             recoverInitialStatusForSingleClz(clz);
         }
     }

@@ -56,16 +56,29 @@ public class StaticInitRenamer extends ClassVisitor {
             final String[] exceptions) {
         MethodVisitor methodVisitor;
         if ("<clinit>".equals(name)) {
-            Data.setHasStaticInitializer(TypeUtil.intern2Bin(owner));
-
             int newAccess = Opcodes.ACC_PRIVATE + Opcodes.ACC_STATIC;
             String newName = newStaticInitName;
             methodVisitor = super.visitMethod(newAccess, newName, descriptor, signature, exceptions);
 
-            // Creates a new <clinit> that invokes the renamed
-            // original one
+            // Creates a new <clinit> that
             newClinitVisitor = super.visitMethod(access, name, descriptor, signature, exceptions);
-            newClinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, owner, newName, descriptor, false);
+            // 1) invokes the renamed original <clinit>
+            newClinitVisitor.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    owner,
+                    newName,
+                    descriptor,
+                    false);
+            // 2) records the order of class initialization
+            if (!Data.hasRecordedClassInitOrder()) {
+                newClinitVisitor.visitLdcInsn(TypeUtil.intern2Bin(owner));
+                newClinitVisitor.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        Constants.DATA_CLZ_INTERN_NAME,
+                        Constants.ADD_CLASS_INIT_METH_NAME,
+                        Constants.ADD_CLASS_INIT_METH_DESC,
+                        false);
+            }
             newClinitVisitor.visitInsn(Opcodes.RETURN);
             newClinitVisitor.visitMaxs(0, 0);
         } else {

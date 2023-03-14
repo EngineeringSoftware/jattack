@@ -25,16 +25,31 @@ import java.util.TreeSet;
 public class Data {
 
     /**
-     * If the template has static initializer, i.e., <clinit>.
+     * The list records the order of class initialization.
+     * Note, the class without static initializer is not included in
+     * the list.
      */
-    private static Set<String> hasStaticInitializer = new HashSet<>();
+    private static final UniqueList<String> classesInitOrder = new UniqueList<>();
+    private static boolean recordedClassesInitOrder = false;
 
-    public static boolean hasStaticInitializer(String className) {
-        return hasStaticInitializer.contains(className);
+    public static void addClassInit(String className) {
+        classesInitOrder.add(className);
     }
 
-    public static void setHasStaticInitializer(String className) {
-        hasStaticInitializer.add(className);
+    public static boolean hasStaticInitializer(String className) {
+        return classesInitOrder.contains(className);
+    }
+
+    public static UniqueList<String> getClassInitOrder() {
+        return classesInitOrder;
+    }
+
+    public static boolean hasRecordedClassInitOrder() {
+        return recordedClassesInitOrder;
+    }
+
+    public static void finishRecordingClassInitOrder() {
+        recordedClassesInitOrder = true;
     }
 
      /**
