@@ -67,10 +67,11 @@ public class Constants {
             String.format("(I)%s", OBJECT_TYPE_DESC);
     public static final String INIT_FIELD_ANALYZER_METH_NAME = "initFieldAnalyzer";
     public static final String INIT_FIELD_ANALYZER_METH_DESC = "()V";
-    public static final String FIND_FIELDS_METH_NAME = "findFields";
-    public static final String FIND_FIELDS_METH_DESC1 =
-            String.format("(%s)V", OBJECT_TYPE_DESC);
-    public static final String FIND_FIELDS_METH_DESC2 =
+    public static final String FIND_FIELDS_FOR_OBJECT_METH_NAME = "findFieldsForObject";
+    public static final String FIND_FIELDS_FOR_OBJECT_METH_DESC =
+            String.format("(%s%s)V", OBJECT_TYPE_DESC, CLASS_TYPE_DESC);
+    public static final String FIND_FIELDS_FOR_CLASS_METH_NAME = "findFieldsForClass";
+    public static final String FIND_FIELDS_FOR_CLASS_METH_DESC =
             String.format("(%s)V", CLASS_TYPE_DESC);
     public static final String SAVE_FIELD_VALUES_METH_NAME = "saveFieldValues";
     public static final String SAVE_FIELD_VALUES_METH_DESC= "()V";

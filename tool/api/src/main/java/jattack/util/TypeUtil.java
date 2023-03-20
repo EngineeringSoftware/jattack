@@ -1,6 +1,7 @@
 package jattack.util;
 
 import jattack.Constants;
+import jattack.exception.InvocationTemplateException;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -17,6 +18,42 @@ import java.util.stream.Collectors;
  * Utility class for types.
  */
 public class TypeUtil {
+
+    /**
+     * Wrap {@link Array#get(Object, int)}
+     * rethrowing InvocationTemplateException.
+     * @throws InvocationTemplateException
+     */
+    public static Object arrayGet(Object array, int index)
+            throws InvocationTemplateException {
+        try {
+            if (array == null) {
+                throw new InvocationTemplateException(
+                        new NullPointerException("the specified array is null"));
+            }
+            return Array.get(array, index);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new InvocationTemplateException(e);
+        }
+    }
+
+    /**
+     * Wrap {@link Array#set(Object, int, Object)}
+     * rethrowing InvocationTemplateException.
+     * @throws InvocationTemplateException
+     */
+    public static void arraySet(Object array, int index, Object value)
+            throws InvocationTemplateException {
+        try {
+            if (array == null) {
+                throw new InvocationTemplateException(
+                    new NullPointerException("the specified array is null"));
+            }
+            Array.set(array, index, value);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new InvocationTemplateException(e);
+        }
+    }
 
     public static int compare(Number n1, Number n2) {
         if (n1.getClass() != n2.getClass()) {
@@ -106,14 +143,12 @@ public class TypeUtil {
     }
 
     public static Class<?> loadClz(String className)
-        throws ClassNotFoundException {
+            throws ClassNotFoundException {
         return loadClz(className, true);
     }
 
-    public static Class<?> loadClz(
-        String className,
-        boolean initialize)
-        throws ClassNotFoundException {
+    public static Class<?> loadClz(String className, boolean initialize)
+            throws ClassNotFoundException {
         return loadClz(className, initialize, TypeUtil.class.getClassLoader());
     }
 

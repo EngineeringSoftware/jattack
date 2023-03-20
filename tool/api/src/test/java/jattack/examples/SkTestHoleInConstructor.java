@@ -12,17 +12,19 @@ public class SkTestHoleInConstructor {
     }
 
     static class C extends D {
+        private static final int I = 10;
+
         C(int i) {
             super(intId().eval());
         }
 
         C() {
-            this(intVal().eval());
+            this(intId().eval());
         }
     }
 
     static class D {
-        int i;
+        private int i;
 
         D(int i) {
             this.i = intId().eval();

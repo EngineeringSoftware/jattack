@@ -110,17 +110,17 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
 
     private void saveFieldValues() {
         invokeInitFieldAnalyzer();
-        if (m_isStatic) {
-            // Get the fields accessible from the static method
+        if (m_isStatic || !thisInitialized) {
+            // Get the fields accessible statically
+            // when the hole is in a static method or in a constructor
+            // where "this" has not been initialized
             super.visitLdcInsn(Type.getObjectType(m_className));
             invokeFindFieldsForClass();
         } else {
-            // not do if "this" has not been initialized
-            if (thisInitialized) {
-                // Get the fields accessible by "this"
-                super.visitVarInsn(Opcodes.ALOAD, 0);
-                invokeFindFieldsForObject();
-            }
+            // Get the fields accessible by "this"
+            super.visitVarInsn(Opcodes.ALOAD, 0);
+            super.visitLdcInsn(Type.getObjectType(m_className));
+            invokeFindFieldsForObject();
         }
         invokeSaveFieldValues();
     }
@@ -310,14 +310,14 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
     }
 
     /**
-     * {@code FieldAnalyzer.findFields(Object);}
+     * {@code FieldAnalyzer.findFields(Object,Class<?>);}
      */
     private void invokeFindFieldsForObject() {
         super.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.FIND_FIELDS_METH_NAME,
-                Constants.FIND_FIELDS_METH_DESC1,
+                Constants.FIND_FIELDS_FOR_OBJECT_METH_NAME,
+                Constants.FIND_FIELDS_FOR_OBJECT_METH_DESC,
                 false);
     }
 
@@ -328,8 +328,8 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
         super.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.FIND_FIELDS_METH_NAME,
-                Constants.FIND_FIELDS_METH_DESC2,
+                Constants.FIND_FIELDS_FOR_CLASS_METH_NAME,
+                Constants.FIND_FIELDS_FOR_CLASS_METH_DESC,
                 false);
     }
 

@@ -44,10 +44,15 @@ public class FieldAnalyzer {
      * Find all the available fields from the context of an instance
      * method.
      * <p>
+     * clz does not have to be obj.getClass() because we might be
+     * looking for available fields in a superclass while using an
+     * object of subclass, where obj.getClass() is the subclass while
+     * clz is the superclass.
+     * <p>
      * Used through instrumentation.
      */
-    public static void findFields(Object obj) {
-        fieldAnalyzer.findFields(obj, null);
+    public static void findFieldsForObject(Object obj, Class<?> clz) {
+        fieldAnalyzer.findFields0(obj, clz);
     }
 
     /**
@@ -56,8 +61,8 @@ public class FieldAnalyzer {
      * <p>
      * Used through instrumentation.
      */
-    public static void findFields(Class<?> clz) {
-       fieldAnalyzer.findFields(null, clz);
+    public static void findFieldsForClass(Class<?> clz) {
+       fieldAnalyzer.findFields0(null, clz);
     }
 
     /**
@@ -110,18 +115,8 @@ public class FieldAnalyzer {
         }
     }
 
-    private void findFields(Object obj, Class<?> clz) {
-        if (obj == null && clz == null
-                || obj != null && clz != null) {
-            throw new IllegalArgumentException("Either obj or clz but not both has to be null!");
-        }
-
-        boolean fromStaticMethod = true;
-        if (obj != null) {
-            // non-static method
-            clz = obj.getClass();
-            fromStaticMethod = false;
-        }
+    private void findFields0(Object obj, Class<?> clz) {
+        boolean fromStaticMethod = obj == null;
 
         // Find the fields declared by clz
         findFieldsForSelf(obj, clz, fromStaticMethod);

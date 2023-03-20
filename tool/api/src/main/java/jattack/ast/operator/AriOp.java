@@ -5,6 +5,8 @@ import com.microsoft.z3.ArithSort;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 
+import jattack.exception.InvocationTemplateException;
+
 /**
  * Arithmetic operator.
  */
@@ -26,22 +28,30 @@ public enum AriOp implements AriOrShiftOp {
         return strRep;
     }
 
-    public Number apply(Number left, Number right) {
+    public Number apply(Number left, Number right) throws InvocationTemplateException {
+        try {
+            return apply0(left, right);
+        } catch (ArithmeticException e) {
+            throw new InvocationTemplateException(e);
+        }
+    }
+
+    private Number apply0(Number left, Number right) throws ArithmeticException {
         // right has the same type with left so we check left only
         if (left instanceof Integer) {
-            return apply(left.intValue(), right.intValue());
+            return apply0(left.intValue(), right.intValue());
         } else if (left instanceof Long) {
-            return apply(left.longValue(), right.longValue());
+            return apply0(left.longValue(), right.longValue());
         } else if (left instanceof Float) {
-            return apply(left.floatValue(), right.floatValue());
+            return apply0(left.floatValue(), right.floatValue());
         } else if (left instanceof Double) {
-            return apply(left.doubleValue(), right.doubleValue());
+            return apply0(left.doubleValue(), right.doubleValue());
         } else {
             throw new RuntimeException("Unsupported type: " + left.getClass());
         }
     }
 
-    private int apply(int left, int right) {
+    private int apply0(int left, int right) throws ArithmeticException {
         switch (this) {
         case ADD:
             return left + right;
@@ -50,15 +60,15 @@ public enum AriOp implements AriOrShiftOp {
         case MUL:
             return left * right;
         case DIV:
-            return left / right; // throw ArithmeticException
+            return left / right;
         case MOD:
-            return left % right; // throw ArithmeticException
+            return left % right;
         default:
             throw new RuntimeException("Unrecognized operator " + this.asStr());
         }
     }
 
-    private long apply(long left, long right) {
+    private long apply0(long left, long right) throws ArithmeticException {
         switch (this) {
         case ADD:
             return left + right;
@@ -67,15 +77,15 @@ public enum AriOp implements AriOrShiftOp {
         case MUL:
             return left * right;
         case DIV:
-            return left / right; // throw ArithmeticException
+            return left / right;
         case MOD:
-            return left % right; // throw ArithmeticException
+            return left % right;
         default:
             throw new RuntimeException("Unrecognized operator " + this.asStr());
         }
     }
 
-    public float apply(float left, float right) {
+    public float apply0(float left, float right) throws ArithmeticException {
         switch (this) {
         case ADD:
             return left + right;
@@ -92,7 +102,7 @@ public enum AriOp implements AriOrShiftOp {
         }
     }
 
-    public double apply(double left, double right) {
+    public double apply0(double left, double right) throws ArithmeticException {
         switch (this) {
         case ADD:
             return left + right;

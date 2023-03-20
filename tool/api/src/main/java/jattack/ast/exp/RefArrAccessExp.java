@@ -5,8 +5,9 @@ import jattack.ast.exp.iterator.ChainItr;
 import jattack.ast.exp.iterator.ExpItr;
 import jattack.ast.exp.iterator.Itr;
 import jattack.ast.visitor.Visitor;
-import jattack.data.Data;
 import jattack.driver.Driver;
+import jattack.exception.InvocationTemplateException;
+import jattack.util.TypeUtil;
 
 import java.lang.reflect.Array;
 
@@ -117,10 +118,10 @@ public class RefArrAccessExp<E, A> extends LHSExp<E> {
     }
 
     @Override
-    public void updateVal(E val) {
+    public void updateVal(E val) throws InvocationTemplateException {
         A arr = id.evaluate();
         int i = index.evaluate();
-        Array.set(arr, i, val);
+        TypeUtil.arraySet(arr, i, val);
         if (!(id instanceof LHSExp)) {
             throw new RuntimeException("Expected id is a LHSExp but it is " + id.getClass());
         }

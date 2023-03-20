@@ -479,23 +479,9 @@ public class Data {
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
         for (RuntimeSymbol symbol : memory.getTable().values()) {
             String name = symbol.getName();
-            Object value = symbol.getValue();
-            // if (value == null) {
-            //     // No way to check runtime type for null value
-            //     String sDesc = symbol.getDesc();
-            //     Class<?> sDeclType = Class.forName(TypeUtil.desc2Bin(sDesc));
-            //     if (assignedType.isAssignableFrom(sDeclType)) {
-            //         ids.add(name);
-            //     } else {
-            //         continue;
-            //     }
-            // }
-            // // We check runtime type rather than declaring type
-            // Class<?> sRuntimeType = value.getClass();
-            // if (assignedType.isAssignableFrom(sRuntimeType)) {
-            //     ids.add(name);
-            // }
             String sDesc = symbol.getDesc();
+            // We use declaring type rather than runtime type because
+            // hole filling is on source code level
             Class<?> sDeclType = Class.forName(TypeUtil.desc2Bin(sDesc));
             if (assignedType.isAssignableFrom(sDeclType)) {
                 ids.add(name);

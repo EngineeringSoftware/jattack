@@ -35,9 +35,9 @@ import jattack.ast.stmt.IfStmt;
 import jattack.ast.stmt.Stmt;
 import jattack.ast.stmt.TryStmt;
 import jattack.ast.stmt.WhileStmt;
+import jattack.exception.InvocationTemplateException;
 import jattack.util.TypeUtil;
 
-import java.lang.reflect.Array;
 import java.util.Stack;
 
 /**
@@ -172,7 +172,7 @@ public class EvalVisitor extends Visitor {
         Object arr = stack.pop();
         // index
         int i = (int) stack.pop();
-        stack.push(Array.get(arr, i));
+        stack.push(TypeUtil.arrayGet(arr, i));
     }
 
     @Override
@@ -245,12 +245,25 @@ public class EvalVisitor extends Visitor {
     public <T> void endVisit(CastExp<T> node) {
         Object srcVal = stack.pop();
         Class<T> type = node.getType();
+        stack.push(cast(srcVal, type));
+    }
+
+    private Object cast(Object srcVal, Class<?> type)
+            throws InvocationTemplateException{
+        try {
+            return cast0(srcVal, type);
+        } catch (ClassCastException e) {
+            throw new InvocationTemplateException(e);
+        }
+    }
+
+    private Object cast0(Object srcVal, Class<?> type)
+            throws ClassCastException {
         if (!TypeUtil.isBoxed(type)) {
-            stack.push(type.cast(srcVal));
-            return;
+            return type.cast(srcVal);
         }
         Class<?> srcType = srcVal.getClass();
-        String castingErrMsg = "cannot cast " + srcVal.getClass() + " to " + type;
+        String castingErrMsg = "Wrong use of cast API: cannot cast " + srcVal.getClass() + " to " + type;
         if (type.equals(Byte.class)) {
             byte tgtVal;
             if (TypeUtil.isNumberBoxed(srcType)) {
@@ -260,7 +273,7 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
+            return tgtVal;
         } else if (type.equals(Short.class)) {
             short tgtVal;
             if (TypeUtil.isNumberBoxed(srcType)) {
@@ -270,7 +283,7 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
+            return tgtVal;
         } else if (type.equals(Character.class)) {
             char tgtVal;
             if (srcType.equals(Byte.class)) {
@@ -290,7 +303,7 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
+            return tgtVal;
         } else if (type.equals(Integer.class)) {
             int tgtVal;
             if (TypeUtil.isNumberBoxed(srcType)) {
@@ -300,7 +313,7 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
+            return tgtVal;
         } else if (type.equals(Long.class)) {
             long tgtVal;
             if (TypeUtil.isNumberBoxed(srcType)) {
@@ -310,7 +323,7 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
+            return tgtVal;
         } else if (type.equals(Float.class)) {
             float tgtVal;
             if (TypeUtil.isNumberBoxed(srcType)) {
@@ -320,7 +333,7 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
+            return tgtVal;
         } else if (type.equals(Double.class)) {
             double tgtVal;
             if (TypeUtil.isNumberBoxed(srcType)) {
@@ -330,9 +343,14 @@ public class EvalVisitor extends Visitor {
             } else {
                 throw new RuntimeException(castingErrMsg);
             }
-            stack.push(tgtVal);
-        } else {
+            return tgtVal;
+        } else if (type.equals(Boolean.class)) {
+            if (srcVal instanceof Boolean) {
+                return srcVal;
+            }
             throw new RuntimeException(castingErrMsg);
+        } else {
+            throw new RuntimeException("Unexpected boxed type: " + type);
         }
     }
 
@@ -374,6 +392,14 @@ public class EvalVisitor extends Visitor {
     public <T extends Throwable> void visitStmt(TryStmt<T> node) {
         try {
             node.getTryBlock().accept(this);
+        } catch (InvocationTemplateException e) {
+            // unwrap
+            Throwable cause = e.getCause();
+            if (node.getExceptionType().isAssignableFrom(cause.getClass())) {
+                node.getCatchBlock().accept(this);
+            } else {
+                throw e;
+            }
         } catch (Throwable e) {
             if (node.getExceptionType().isAssignableFrom(e.getClass())) {
                 node.getCatchBlock().accept(this);

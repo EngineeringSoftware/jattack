@@ -9,6 +9,9 @@ public class CastExp<T> extends Exp<T> implements NodeWithType<T> {
     private final Class<T> type;
 
     public CastExp(Class<T> type, Exp<?> exp) {
+        if (type.isPrimitive()) {
+            throw new RuntimeException("target type cannot be primitive type: " + type);
+        }
         this.type = type;
         this.exp = exp;
     }
