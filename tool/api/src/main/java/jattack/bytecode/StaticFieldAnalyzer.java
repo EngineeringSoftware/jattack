@@ -61,14 +61,14 @@ public class StaticFieldAnalyzer {
         Set<Field> fields = new HashSet<>();
         for (Field field : clz.getDeclaredFields()) {
             // Skip any synthetic field or any with non-supported type
-            if (field.isSynthetic() || !isTypeSupported(field)) {
+            if (field.isSynthetic() || !TypeUtil.isTypeSupported(field)) {
                 continue;
             }
             fields.add(field);
         }
         // Include static fields from the enclosing class, only
         // when this class is a static nested class.
-        // TODO: not support non-static nested class
+        // TODO: support non-static nested class
         if (TypeUtil.isStatic(clz) && clz.getEnclosingClass() != null) {
             for (Field f : analyzeFieldsAccessibleFromClz(clz.getEnclosingClass())) {
                 if (TypeUtil.isStatic(f)) {
@@ -117,11 +117,6 @@ public class StaticFieldAnalyzer {
             }
             fieldsByMethod.put(fullMethodName, accessibleFields);
         }
-    }
-
-    private static boolean isTypeSupported(Field field) {
-        String desc = Type.getDescriptor(field.getType());
-        return TypeUtil.isTypeDescSupported(desc);
     }
 
     private static Symbol createSymbolFromField(Field field) {

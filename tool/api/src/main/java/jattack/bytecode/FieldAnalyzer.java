@@ -4,8 +4,11 @@ import jattack.data.Data;
 import jattack.util.TypeUtil;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Find, save and update all the available fields given an object or
@@ -15,6 +18,10 @@ public class FieldAnalyzer {
 
     private static class Fld {
         private final Field field;
+        /**
+         * Object from which the represented field's value is to be
+         * extracted, which could be null for static fields.
+         */
         private final Object obj;
         private Fld(Field field, Object obj) {
             this.field = field;
@@ -26,6 +33,10 @@ public class FieldAnalyzer {
     private final Set<Fld> flds;
 
     private static FieldAnalyzer fieldAnalyzer;
+
+    // cache fields for every class to speed up repeated getting
+    private static Map<Class<?>, Set<Field>> fieldsByClz;
+    private static Map<Class<?>, Set<Field>> staticFieldsByClz;
 
     private FieldAnalyzer() {
         flds = new HashSet<>();
@@ -52,7 +63,10 @@ public class FieldAnalyzer {
      * Used through instrumentation.
      */
     public static void findFieldsForObject(Object obj, Class<?> clz) {
-        fieldAnalyzer.findFields0(obj, clz);
+        Set<Field> fields = collectFieldsForSingleClz(clz);
+        for (Field f : fields) {
+            fieldAnalyzer.flds.add(new Fld(f, obj));
+        }
     }
 
     /**
@@ -62,7 +76,10 @@ public class FieldAnalyzer {
      * Used through instrumentation.
      */
     public static void findFieldsForClass(Class<?> clz) {
-       fieldAnalyzer.findFields0(null, clz);
+        Set<Field> fields = collectStaticFieldsForSingleClz(clz);
+        for (Field f : fields) {
+            fieldAnalyzer.flds.add(new Fld(f, null));
+        }
     }
 
     /**
@@ -115,73 +132,68 @@ public class FieldAnalyzer {
         }
     }
 
-    private void findFields0(Object obj, Class<?> clz) {
-        boolean fromStaticMethod = obj == null;
+    /**
+     * Get all the accessible static fields from this class, lazily
+     * using cache {@link FieldAnalyzer#fieldsByClz} and
+     * {@link FieldAnalyzer#staticFieldsByClz}.
+     */
+    private static Set<Field> collectStaticFieldsForSingleClz(Class<?> clz) {
+        if (staticFieldsByClz == null) {
+            staticFieldsByClz = new HashMap<>();
+        }
+        if (staticFieldsByClz.containsKey(clz)) {
+            return staticFieldsByClz.get(clz);
+        }
+        if (fieldsByClz == null || !fieldsByClz.containsKey(clz)) {
+            collectFieldsForSingleClz(clz);
+        }
+        Set<Field> staticFields = fieldsByClz.get(clz).stream()
+                .filter(TypeUtil::isStatic)
+                .collect(Collectors.toCollection(HashSet::new));
+        staticFieldsByClz.put(clz, staticFields);
+        return staticFields;
+    }
 
-        // Find the fields declared by clz
-        findFieldsForSelf(obj, clz, fromStaticMethod);
+    /**
+     * Get all the accessible fields from this class, lazily
+     * using cache {@link FieldAnalyzer#fieldsByClz}.
+     */
+    private static Set<Field> collectFieldsForSingleClz(Class<?> clz) {
+        if (fieldsByClz == null) {
+            fieldsByClz = new HashMap<>();
+        }
+        if (fieldsByClz.containsKey(clz)) {
+            return fieldsByClz.get(clz);
+        }
+        Set<Field> fields = new HashSet<>();
+        for (Field f : clz.getDeclaredFields()) {
+            // Skip any synthetic field or any with non-supported type
+            if (f.isSynthetic() || !TypeUtil.isTypeSupported(f)) {
+                continue;
+            }
+            addField(f, fields);
+        }
+        // Include static fields from the enclosing class, only
+        // when this class is a static nested class.
+        // TODO: support non-static nested class
+        if (TypeUtil.isStatic(clz) && clz.getEnclosingClass() != null) {
+            for (Field f : collectFieldsForSingleClz(clz.getEnclosingClass())) {
+                if (TypeUtil.isStatic(f)) {
+                    addField(f, fields);
+                }
+            }
+        }
+        fieldsByClz.put(clz, fields);
+        return fields;
+    }
 
-        // Find the fields declared by any enclosing class
-        if (!TypeUtil.isStatic(clz)) {
-            // TODO: Support getting fields from the enclosing class
-            //  of a non-static nested class.
+    private static void addField(Field field, Set<Field> fields) {
+        if (Data.memoryContainsSymbol(field.getName())) {
+            // TODO: shadowing? For now we assume no shadowing
+            //  happens. We ignore the field if it is
+            //  shadowed.
             return;
         }
-        clz = clz.getEnclosingClass();
-        while (clz != null) {
-            findFieldsForEnclosingClass(obj, clz);
-            clz = clz.getEnclosingClass();
-        }
-    }
-
-    private void findFieldsForSelf(
-            Object obj,
-            Class<?> clz,
-            boolean fromStaticMethod) {
-        for (Field field : clz.getDeclaredFields()) {
-            // Skip any synthetic field
-            if (field.isSynthetic()) {
-                continue;
-            }
-
-            // Check syntactically access from the context of eval()
-            // TODO: Instead of hardcode here, can we determine if the
-            //  field is accessible from the context that it will be
-            //  filled at runtime?
-            if (fromStaticMethod && !TypeUtil.isStatic(field)) {
-                // Cannot access a non-static field from a static
-                // method
-                continue;
-            }
-
-            // Save the field.
-            String name = field.getName();
-            if (Data.memoryContainsSymbol(name)) {
-                // TODO: shadowing? For now we assume no shadowing
-                //  happens. We ignore the field if it is
-                //  shadowed.
-                continue;
-            }
-            flds.add(new Fld(field, obj));
-        }
-    }
-
-    private void findFieldsForEnclosingClass(
-            Object obj,
-            Class<?> clz) {
-        for (Field field : clz.getDeclaredFields()) {
-            if (field.isSynthetic()) {
-                continue;
-            }
-
-            // Static nested class can access only static fields of
-            // the enclosing class.
-            if (!TypeUtil.isStatic(field)) {
-                continue;
-            }
-
-            // Save the field
-            flds.add(new Fld(field, obj));
-        }
+        fields.add(field);
     }
 }

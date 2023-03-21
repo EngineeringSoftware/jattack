@@ -24,34 +24,6 @@ import java.util.TreeSet;
 //  this big class, e.g., {@link Data#memory}.
 public class Data {
 
-    /**
-     * The list records the order of class initialization.
-     * Note, the class without static initializer is not included in
-     * the list.
-     */
-    private static final UniqueList<String> classesInitOrder = new UniqueList<>();
-    private static boolean recordedClassesInitOrder = false;
-
-    public static void addClassInit(String className) {
-        classesInitOrder.add(className);
-    }
-
-    public static boolean hasStaticInitializer(String className) {
-        return classesInitOrder.contains(className);
-    }
-
-    public static UniqueList<String> getClassInitOrder() {
-        return classesInitOrder;
-    }
-
-    public static boolean hasRecordedClassInitOrder() {
-        return recordedClassesInitOrder;
-    }
-
-    public static void finishRecordingClassInitOrder() {
-        recordedClassesInitOrder = true;
-    }
-
      /**
      * Cache to store string representations of AST nodes generated
      * in the current run.
@@ -488,6 +460,37 @@ public class Data {
             }
         }
         return ids;
+    }
+
+    /*----- Data Collected from first loading template classes -----*/
+
+    private static boolean recordedClassesInitOrder = false;
+
+    public static boolean hasRecordedClassInitOrder() {
+        return recordedClassesInitOrder;
+    }
+
+    public static void finishRecordingClassInitOrder() {
+        recordedClassesInitOrder = true;
+    }
+
+    /**
+     * The list records the order of class initialization.
+     * Note, the class without static initializer is not included in
+     * the list.
+     */
+    private static final UniqueList<String> classesInitOrder = new UniqueList<>();
+
+    public static void addClassInit(String className) {
+        classesInitOrder.add(className);
+    }
+
+    public static boolean hasStaticInitializer(String className) {
+        return classesInitOrder.contains(className);
+    }
+
+    public static UniqueList<String> getClassInitOrder() {
+        return classesInitOrder;
     }
 
     /*---------------------- Static generation ---------------------*/

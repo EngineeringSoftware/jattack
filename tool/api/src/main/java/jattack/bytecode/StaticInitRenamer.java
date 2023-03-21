@@ -40,10 +40,8 @@ public class StaticInitRenamer extends ClassVisitor {
 
     @Override
     public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-        // TODO: collect which fields are final and of immutable type
-        //  so that we will not need to worry about them when
-        //  captureing/resetting values for these fields.
-        // Unset any final modifier for fields.
+        // Unset any final modifier for fields so we can reset those
+        // fields when reinitilazing the class
         return super.visitField(access & ~Opcodes.ACC_FINAL, name, descriptor, signature, value);
     }
 

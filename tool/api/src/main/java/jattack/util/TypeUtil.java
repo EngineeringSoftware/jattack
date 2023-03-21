@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.objectweb.asm.Type;
+
 /**
  * Utility class for types.
  */
@@ -218,6 +220,11 @@ public class TypeUtil {
             return false;
         }
         return className.startsWith(Constants.ROOT_PKG + ".");
+    }
+
+    public static boolean isTypeSupported(Field field) {
+        String desc = Type.getDescriptor(field.getType());
+        return isTypeDescSupported(desc);
     }
 
     /**

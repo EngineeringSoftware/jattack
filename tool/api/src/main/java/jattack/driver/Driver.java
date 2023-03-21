@@ -7,6 +7,7 @@ import jattack.annotation.Argument;
 import jattack.annotation.Arguments;
 import jattack.annotation.Entry;
 import jattack.ast.Node;
+import jattack.bytecode.FieldAnalyzer;
 import jattack.bytecode.StaticFieldAnalyzer;
 import jattack.bytecode.VariableAnalyzer;
 import jattack.compiler.ClassBytes;
@@ -333,10 +334,10 @@ public class Driver {
         allClassNamesInTmpl = compiler.getCompiledClassNames();
         tmplClz = TypeUtil.loadClz(tmplClzFullName);
         allClzes = TypeUtil.loadClzes(allClassNamesInTmpl);
-        orderAllClzesByInit();
         entryMethod = getEntryMethod(tmplClz);
         argMethods = getArgumentMethods(tmplClz);
         argsMethod = getArgsMethod(tmplClz);
+        orderAllClzesByInit();
         saveInitialTmplStatus();
     }
 
