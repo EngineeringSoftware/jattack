@@ -96,6 +96,12 @@ public class Config {
      */
     public static String outputClzNamePostfix = "Gen";
 
+    /**
+     * Determine if we rename the generated program using
+     * {@link Config#outputClzNamePostfix} and {@code outputCount}.
+     */
+    public static boolean renameOutputClz = true;
+
     /* The info of the test template program as input. */
     public static String tmplClzFullName;
     public static String tmplSrcPath; // the path of source code.

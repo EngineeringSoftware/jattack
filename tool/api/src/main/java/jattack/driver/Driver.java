@@ -7,7 +7,6 @@ import jattack.annotation.Argument;
 import jattack.annotation.Arguments;
 import jattack.annotation.Entry;
 import jattack.ast.Node;
-import jattack.bytecode.FieldAnalyzer;
 import jattack.bytecode.StaticFieldAnalyzer;
 import jattack.bytecode.VariableAnalyzer;
 import jattack.compiler.ClassBytes;
@@ -303,7 +302,7 @@ public class Driver {
         String outputClzName = getOutputClzName(0);
         String code = outputTransformer.setOutClzName(outputClzName)
                 .transformAndGetSrcCode();
-        outputJavaFile(outputClzName, code);
+        outputJavaFile(outputClzName, code, 0);
     }
 
     private static void genFromTmpl() {
@@ -826,10 +825,6 @@ public class Driver {
     }
 
     private static void transformAndOutput() throws CompilationException {
-        transformAndOutput(true);
-    }
-    private static void transformAndOutput(boolean canOutput)
-            throws CompilationException {
         int outputIdx = Data.outputCount + 1;
         String outputClzName = getOutputClzName(outputIdx);
         String code;
@@ -845,20 +840,19 @@ public class Driver {
 
         // Check if the generated program is compilable
         if (!Config.allowNonCompilableOutput) {
-            // throw a CompilerException if the generated program cannot compile
+            // throw a CompilerException if the generated program
+            // cannot compile, and do not output the program
             compiler.compile(outputClzName, code);
         }
 
-        // Output only if the generated program is able to compile
         if (Config.mimicExecution) {
             // print out checksum value
             IOUtil.writeToFile(Config.outputDir,
                                outputClzName + "_output.txt",
-                               checksum.getValue() + "\n");
-            outputJavaFile(outputClzName, code);
-        } else if (canOutput) {
-            outputJavaFile(outputClzName, code);
+                               checksum.getValue() + "\n",
+                               Config.outputClzNamePostfix + outputIdx);
         }
+        outputJavaFile(outputClzName, code, outputIdx);
 
         Data.outputCount = outputIdx;
         Data.repeatedTrials = 0;
@@ -967,6 +961,12 @@ public class Driver {
     }
 
     private static String getOutputClzName(int idx) {
+        return Config.renameOutputClz ?
+               buildOutputClzNameIfRenamed(idx) :
+               tmplClzSimpleName;
+    }
+
+    private static String buildOutputClzNameIfRenamed(int idx) {
         return tmplClzSimpleName + Config.outputClzNamePostfix + idx;
     }
 
@@ -998,13 +998,20 @@ public class Driver {
     }
 
     private static void outputJavaFile(
-            String outputClzName, String code) {
+            String outputClzName, String code, int idx) {
         if (Config.disableOutput) {
-            // With outputs disabled, we need to at least print out how
-            // many programs we tried.
-            IOUtil.writeToFile(Config.outputDir, "output.txt", "outputCount: " + Data.outputCount);
+            // With outputs disabled, we need to at least print out
+            // how many programs we tried.
+            IOUtil.writeToFile(
+                    Config.outputDir,
+                    "output.txt",
+                    "outputCount: " + Data.outputCount);
         } else {
-            IOUtil.writeToFile(Config.outputDir, outputClzName + ".java", code);
+            IOUtil.writeToFile(
+                    Config.outputDir,
+                    outputClzName + ".java",
+                    code,
+                    Config.outputClzNamePostfix + idx);
         }
     }
 
@@ -1017,7 +1024,7 @@ public class Driver {
     private static void appendHoleValuesFile() {
         IOUtil.writeToFile(Config.outputDir,
                 Config.holeValuesFile,
-                condValsToString(getOutputClzName(Data.outputCount)),
+                condValsToString(buildOutputClzNameIfRenamed(Data.outputCount)),
                 true);
     }
 

@@ -2,7 +2,6 @@ package jattack.driver;
 
 import jattack.Config;
 import jattack.log.Log;
-import jattack.util.IOUtil;
 import jattack.util.Rand;
 
 import java.util.LinkedList;
@@ -27,7 +26,7 @@ public class Cli {
     }
 
     private static void initialize() {
-        IOUtil.createDir(Config.outputDir);
+        // IOUtil.createDir(Config.outputDir);
     }
 
     private static void checkConsistent() {
@@ -171,6 +170,10 @@ public class Cli {
         }
         case "outputPostfix": {
             Config.outputClzNamePostfix = value;
+            break;
+        }
+        case "renameOutputClz": {
+            Config.renameOutputClz = value.isEmpty() || Boolean.parseBoolean(value);
             break;
         }
         case "profiling": {

@@ -6,40 +6,52 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utility class for IO.
  */
 public class IOUtil {
 
-    public static void writeToFile(String dir, String file, String code) {
-        writeToFile(dir, file, code, false);
+    /**
+     * Write the given code to the given file under the given
+     * directory and sub-directories, always overwriting the file.
+     */
+    public static void writeToFile(
+            String dir, String file, String code, String... subDirs) {
+        writeToFile(dir, file, code, false, subDirs);
     }
 
-    public static void writeToFile(String dir, String file, String code, boolean append) {
-        writeToFile(Paths.get(dir, file), code.getBytes(StandardCharsets.UTF_8), append);
-    }
-
-    public static void writeToFile(Path path, byte[] bytes, boolean append) {
+    /**
+     * Write the given code to the given file under the given
+     * directory and sub-directories.
+     */
+    public static void writeToFile(
+            String dir, String file, String code, boolean append, String... subDirs) {
+        List<String> dirs = new ArrayList<>();
+        dirs.addAll(Arrays.asList(subDirs));
+        dirs.add(file);
         try {
-            if (append) {
-                Files.write(path, bytes, StandardOpenOption.APPEND);
-            } else {
-                Files.write(path, bytes);
-            }
+            writeToFile(Paths.get(dir, dirs.toArray(String[]::new)),
+                        code.getBytes(StandardCharsets.UTF_8),
+                        append);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void createDir(String outputDir) {
-        Path outputDirPath = Paths.get(outputDir);
-        if (Files.notExists(outputDirPath)) {
-            try {
-                Files.createDirectories(outputDirPath);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    public static void writeToFile(Path path, byte[] bytes, boolean append)
+            throws IOException{
+        Path dir = path.getParent();
+        if (Files.notExists(dir)) {
+            Files.createDirectories(dir);
+        }
+        if (append) {
+            Files.write(path, bytes, StandardOpenOption.APPEND);
+        } else {
+            Files.write(path, bytes);
         }
     }
 

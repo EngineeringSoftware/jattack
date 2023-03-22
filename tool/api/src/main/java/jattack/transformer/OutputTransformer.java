@@ -151,6 +151,10 @@ public class OutputTransformer extends Transformer {
      * Rename class.
      */
     private void renameClass() {
+        if (inClzName.equals(outClzName)) {
+            // No need to rename if the same
+            return;
+        }
         clz.setName(outClzName);
         // find usage in methods and change every one
         clz.accept(new RenameVisitor(inClzName, outClzName), null);

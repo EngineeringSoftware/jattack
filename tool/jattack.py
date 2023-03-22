@@ -195,7 +195,7 @@ def exceute_and_test(
     # num_gen could be different with n_gen given by the user in the
     # case where a template defines a small search space while n_gen
     # is given a large number.
-    all_gen_paths = [ Path(p) for p in natsorted(gen_dir.glob("*.java"))]
+    all_gen_paths = [ Path(p) for p in natsorted(gen_dir.glob("*/*.java"))]
     num_gen = len(all_gen_paths)
     print_test_plan(num_gen)
     pkg = ".".join(tmpl_clz.split(".")[:-1])
@@ -205,14 +205,17 @@ def exceute_and_test(
     all_tests_pass = True
     su.io.rm(output_dir)
     su.io.mkdir(output_dir, parents=True)
-    for gen_i, gen_src in enumerate(all_gen_paths):
-        test_number = gen_i + 1
+    for gen_number, gen_src in enumerate(all_gen_paths):
+        test_number = gen_number + 1
         gen_clz = pkg + "." + gen_src.stem if pkg else gen_src.stem
-        output_dir_per_gen = output_dir / gen_clz
+        gen_id = gen_src.parts[-2]
+        output_dir_per_gen = output_dir / gen_id
 
         # Clean
         su.io.rm(output_dir_per_gen)
         su.io.mkdir(output_dir_per_gen, parents=True)
+        su.io.rm(build_dir)
+        su.io.mkdir(build_dir, parents=True)
 
         # Compile
         try:
@@ -335,7 +338,7 @@ def generate(
 
     # Literally no hole in the template or no hole reached in the
     # template during generation
-    if list(gen_dir.glob(f"*{gen_suffix}0.java")):
+    if list(gen_dir.glob(f"{gen_suffix}0/*.java")):
         raise BailOutError("No reachable hole in the template!")
     #fi
 #fed
@@ -351,6 +354,7 @@ def compile_template(src: Path, build_dir: Path, javac: Path) -> None:
         raise BailOutError(f"Template source file not found: {src}")
     #fi
     try:
+        su.io.rm(build_dir)
         su.io.mkdir(build_dir, parents=True)
         bash_run(
             f"{javac} -cp {JATTACK_JAR} {src} -d {build_dir}",
