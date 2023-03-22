@@ -64,9 +64,7 @@ public class FieldAnalyzer {
      */
     public static void findFieldsForObject(Object obj, Class<?> clz) {
         Set<Field> fields = collectFieldsForSingleClz(clz);
-        for (Field f : fields) {
-            fieldAnalyzer.flds.add(new Fld(f, obj));
-        }
+        createFlds(fields, obj);
     }
 
     /**
@@ -77,8 +75,18 @@ public class FieldAnalyzer {
      */
     public static void findFieldsForClass(Class<?> clz) {
         Set<Field> fields = collectStaticFieldsForSingleClz(clz);
+        createFlds(fields, null);
+    }
+
+    private static void createFlds(Set<Field> fields, Object obj) {
         for (Field f : fields) {
-            fieldAnalyzer.flds.add(new Fld(f, null));
+            if (Data.memoryContainsSymbol(f.getName())) {
+                // TODO: shadowing? For now we assume no shadowing
+                //  happens. We ignore the field if it is
+                //  shadowed.
+                continue;
+            }
+            fieldAnalyzer.flds.add(new Fld(f, obj));
         }
     }
 
@@ -144,10 +152,7 @@ public class FieldAnalyzer {
         if (staticFieldsByClz.containsKey(clz)) {
             return staticFieldsByClz.get(clz);
         }
-        if (fieldsByClz == null || !fieldsByClz.containsKey(clz)) {
-            collectFieldsForSingleClz(clz);
-        }
-        Set<Field> staticFields = fieldsByClz.get(clz).stream()
+        Set<Field> staticFields = collectFieldsForSingleClz(clz).stream()
                 .filter(TypeUtil::isStatic)
                 .collect(Collectors.toCollection(HashSet::new));
         staticFieldsByClz.put(clz, staticFields);
@@ -171,7 +176,7 @@ public class FieldAnalyzer {
             if (f.isSynthetic() || !TypeUtil.isTypeSupported(f)) {
                 continue;
             }
-            addField(f, fields);
+            fields.add(f);
         }
         // Include static fields from the enclosing class, only
         // when this class is a static nested class.
@@ -179,21 +184,11 @@ public class FieldAnalyzer {
         if (TypeUtil.isStatic(clz) && clz.getEnclosingClass() != null) {
             for (Field f : collectFieldsForSingleClz(clz.getEnclosingClass())) {
                 if (TypeUtil.isStatic(f)) {
-                    addField(f, fields);
+                    fields.add(f);
                 }
             }
         }
         fieldsByClz.put(clz, fields);
         return fields;
-    }
-
-    private static void addField(Field field, Set<Field> fields) {
-        if (Data.memoryContainsSymbol(field.getName())) {
-            // TODO: shadowing? For now we assume no shadowing
-            //  happens. We ignore the field if it is
-            //  shadowed.
-            return;
-        }
-        fields.add(field);
     }
 }
