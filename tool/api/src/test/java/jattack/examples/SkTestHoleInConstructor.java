@@ -8,17 +8,33 @@ public class SkTestHoleInConstructor {
 
     @Entry
     static void m() {
-        C c = new C();
+        C c1 = new C();
+        C c2 = new C(true);
     }
 
     static class C extends D {
         private static final int I = 10;
 
-        C(int i) {
+        C(boolean b) {
+            // test three invokespecials
+            // the second one is the one that instantiates C
+            this(new D(intId().eval()), // I
+                 intId().eval()); // I
+            D d = new D(intId().eval()); // I
+        }
+
+        private C(D d, int i) {
+            // i, I
+            super(intId().eval());
+        }
+
+        private C(int i) {
+            // i, I
             super(intId().eval());
         }
 
         C() {
+            // I
             this(intId().eval());
         }
     }
@@ -27,6 +43,7 @@ public class SkTestHoleInConstructor {
         private int i;
 
         D(int i) {
+            // i
             this.i = intId().eval();
         }
     }

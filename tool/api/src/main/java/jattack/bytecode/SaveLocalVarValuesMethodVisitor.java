@@ -7,6 +7,7 @@ import jattack.Constants;
 import jattack.data.Data;
 import jattack.util.TypeUtil;
 
+import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +30,17 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      */
     private boolean thisInitialized;
 
+    /**
+     * Stack to keep track of dangling NEW instructions. We pop a
+     * marker from the stack when we encounter a INVOKESPEICAL <init>
+     * instruction, because we know they create another new object.
+     * If the stack is empty, then we know that all NEW
+     * instructions have been matched with INVOKESPECIAL <init>, and
+     * the next INVOKESPECIAL <init> instruction must be the one that
+     * initializes "this".
+     */
+    private Deque<String> danglingNewStack;
+
     public SaveLocalVarValuesMethodVisitor(
             MethodVisitor mv,
             String className,
@@ -41,11 +53,23 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
         m_offsets = Data.getOffsetsOfEvalsOfMethod(m_fullMethodName);
         m_isStatic = isStatic;
         m_isConstructor = isConstructor;
-        if (!m_isConstructor) {
-            // If not in constrcutor, "this" must have been
-            // initialized.
-            thisInitialized = true;
+        // If not in constrcutor, "this" must have been initialized.
+        // Otherwise, we have to wait.
+        thisInitialized = !m_isConstructor;
+        danglingNewStack = new ArrayDeque<>();
+    }
+
+
+    @Override
+    public void visitTypeInsn(int opcode, String type) {
+        if (m_isConstructor) {
+            // Push a marker to the stack to indicate that a NEW
+            // instruction has been encountered.
+            if (opcode == Opcodes.NEW) {
+                danglingNewStack.push("has_dangling_new");
+            }
         }
+        super.visitTypeInsn(opcode, type);
     }
 
     @Override
@@ -55,12 +79,18 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             String name,
             String desc,
             boolean isInterface) {
-        // Detect the first invokespecial in the constructor, which
-        // should be the one that initializes the instance
         if (!thisInitialized
                 && opcode == Opcodes.INVOKESPECIAL
                 && name.equals("<init>")) {
-            thisInitialized = true;
+            if (!danglingNewStack.isEmpty()) {
+                // the INVOKESPECIAL <init> pairs with the NEW on
+                // the stack, so we can pop it.
+                danglingNewStack.pop();
+            } else {
+                // This is the one that instantiates the class we
+                // are looking for.
+                thisInitialized = true;
+            }
         }
 
         // Match eval(I)
