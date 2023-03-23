@@ -493,6 +493,22 @@ public class Data {
         return classesInitOrder;
     }
 
+    /*------------- Exception thrown from template ---------------- */
+
+    private static Throwable invocationTemplateException = null;
+
+    public static boolean isInvocationTemplateException(Throwable e) {
+        return invocationTemplateException == e;
+    }
+
+    public static void saveInvocationTemplateException(Throwable e) {
+        invocationTemplateException = e;
+    }
+
+    public static void resetInvocationTemplateException() {
+        invocationTemplateException = null;
+    }
+
     /*---------------------- Static generation ---------------------*/
 
     /**

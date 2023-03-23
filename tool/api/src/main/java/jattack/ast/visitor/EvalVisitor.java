@@ -35,7 +35,7 @@ import jattack.ast.stmt.IfStmt;
 import jattack.ast.stmt.Stmt;
 import jattack.ast.stmt.TryStmt;
 import jattack.ast.stmt.WhileStmt;
-import jattack.exception.InvocationTemplateException;
+import jattack.data.Data;
 import jattack.util.TypeUtil;
 
 import java.util.Stack;
@@ -248,12 +248,15 @@ public class EvalVisitor extends Visitor {
         stack.push(cast(srcVal, type));
     }
 
-    private Object cast(Object srcVal, Class<?> type)
-            throws InvocationTemplateException{
+    private Object cast(Object srcVal, Class<?> type) {
         try {
             return cast0(srcVal, type);
         } catch (ClassCastException e) {
-            throw new InvocationTemplateException(e);
+            // Document the exception, so we can know we should not
+            // crash jattack when InvocationTargetException is thrown
+            // with this exception as the cause.
+            Data.saveInvocationTemplateException(e);
+            throw e;
         }
     }
 
@@ -392,14 +395,6 @@ public class EvalVisitor extends Visitor {
     public <T extends Throwable> void visitStmt(TryStmt<T> node) {
         try {
             node.getTryBlock().accept(this);
-        } catch (InvocationTemplateException e) {
-            // unwrap
-            Throwable cause = e.getCause();
-            if (node.getExceptionType().isAssignableFrom(cause.getClass())) {
-                node.getCatchBlock().accept(this);
-            } else {
-                throw e;
-            }
         } catch (Throwable e) {
             if (node.getExceptionType().isAssignableFrom(e.getClass())) {
                 node.getCatchBlock().accept(this);

@@ -6,7 +6,6 @@ import jattack.ast.exp.iterator.ExpItr;
 import jattack.ast.exp.iterator.Itr;
 import jattack.ast.visitor.Visitor;
 import jattack.driver.Driver;
-import jattack.exception.InvocationTemplateException;
 import jattack.util.TypeUtil;
 
 import java.lang.reflect.Array;
@@ -118,7 +117,7 @@ public class RefArrAccessExp<E, A> extends LHSExp<E> {
     }
 
     @Override
-    public void updateVal(E val) throws InvocationTemplateException {
+    public void updateVal(E val) {
         A arr = id.evaluate();
         int i = index.evaluate();
         TypeUtil.arraySet(arr, i, val);

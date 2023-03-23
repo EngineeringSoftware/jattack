@@ -5,7 +5,7 @@ import com.microsoft.z3.ArithSort;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 
-import jattack.exception.InvocationTemplateException;
+import jattack.data.Data;
 
 /**
  * Arithmetic operator.
@@ -28,11 +28,15 @@ public enum AriOp implements AriOrShiftOp {
         return strRep;
     }
 
-    public Number apply(Number left, Number right) throws InvocationTemplateException {
+    public Number apply(Number left, Number right) {
         try {
             return apply0(left, right);
         } catch (ArithmeticException e) {
-            throw new InvocationTemplateException(e);
+            // Document the exception, so we can know we should not
+            // crash jattack when InvocationTargetException is thrown
+            // with this exception as the cause.
+            Data.saveInvocationTemplateException(e);
+            throw e;
         }
     }
 

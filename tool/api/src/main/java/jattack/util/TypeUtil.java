@@ -1,7 +1,7 @@
 package jattack.util;
 
 import jattack.Constants;
-import jattack.exception.InvocationTemplateException;
+import jattack.data.Data;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -22,38 +22,38 @@ import org.objectweb.asm.Type;
 public class TypeUtil {
 
     /**
-     * Wrap {@link Array#get(Object, int)}
-     * rethrowing InvocationTemplateException.
-     * @throws InvocationTemplateException
+     * Wrap {@link Array#get(Object, int, Object)}, saving exceptions
+     * thrown before rethrowing them.
      */
-    public static Object arrayGet(Object array, int index)
-            throws InvocationTemplateException {
+    public static Object arrayGet(Object array, int index) {
         try {
             if (array == null) {
-                throw new InvocationTemplateException(
-                        new NullPointerException("the specified array is null"));
+                RuntimeException e = new NullPointerException("the specified array is null");
+                Data.saveInvocationTemplateException(e);
+                throw e;
             }
             return Array.get(array, index);
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw new InvocationTemplateException(e);
+            Data.saveInvocationTemplateException(e);
+            throw e;
         }
     }
 
     /**
-     * Wrap {@link Array#set(Object, int, Object)}
-     * rethrowing InvocationTemplateException.
-     * @throws InvocationTemplateException
+     * Wrap {@link Array#set(Object, int, Object)}, saving exceptions
+     * thrown before rethrowing them.
      */
-    public static void arraySet(Object array, int index, Object value)
-            throws InvocationTemplateException {
+    public static void arraySet(Object array, int index, Object value) {
         try {
             if (array == null) {
-                throw new InvocationTemplateException(
-                    new NullPointerException("the specified array is null"));
+                RuntimeException e = new NullPointerException("the specified array is null");
+                Data.saveInvocationTemplateException(e);
+                throw e;
             }
             Array.set(array, index, value);
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw new InvocationTemplateException(e);
+            Data.saveInvocationTemplateException(e);
+            throw e;
         }
     }
 
