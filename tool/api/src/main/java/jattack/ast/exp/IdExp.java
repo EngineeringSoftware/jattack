@@ -55,7 +55,7 @@ public abstract class IdExp<T> extends LHSExp<T>
         // guaranteed to be a subtype of the expected type.
         T val = getVal();
         if (val != null && getType() != val.getClass()) {
-            return "(" + getType().getCanonicalName() + ")" + id;
+            return "((" + getType().getCanonicalName() + ")" + id + ")";
         }
         return id;
     }
