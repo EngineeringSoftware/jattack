@@ -125,10 +125,15 @@ public class Config {
     public static boolean allowNonCompilableOutput = false;
 
     /**
-     * Determine if we allow non-compilable generated programs
-     * outputted.
+     * Determine if we ignore JDK classes when computing cheksums.
      */
     public static boolean ignoreJDKClasses = false;
+
+    /**
+     * Determine if we skip outputting generated programs with the
+     * argument(s) method(s) throwing exceptions.
+     */
+    public static boolean skipExceptionInArgumentMethodOutput = false;
 
     /*----------- Optimization technique on/off flags. -------------*/
 

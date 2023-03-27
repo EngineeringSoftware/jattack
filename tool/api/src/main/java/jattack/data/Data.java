@@ -436,7 +436,7 @@ public class Data {
      * Gets the runtime value of the given symbol (field or local
      * variable). Returning {@code null} means the value is
      * {@code null}. If the symbol is not found in memory, an
-     * {@link NoSuchElementException} will be thrown.
+     * {@link java.util.NoSuchElementException} will be thrown.
      */
     public static Object getFromMemoryValueOfSymbol(String name) {
         return memory.getValue(name);

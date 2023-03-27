@@ -22,7 +22,7 @@ import org.objectweb.asm.Type;
 public class TypeUtil {
 
     /**
-     * Wrap {@link Array#get(Object, int, Object)}, saving exceptions
+     * Wrap {@code Array#get(Object,int,Object)}, saving exceptions
      * thrown before rethrowing them.
      */
     public static Object arrayGet(Object array, int index) {
@@ -40,7 +40,7 @@ public class TypeUtil {
     }
 
     /**
-     * Wrap {@link Array#set(Object, int, Object)}, saving exceptions
+     * Wrap {@code Array#set(Object, int, Object)}, saving exceptions
      * thrown before rethrowing them.
      */
     public static void arraySet(Object array, int index, Object value) {
@@ -320,7 +320,7 @@ public class TypeUtil {
      * Returns true if the given {@code clz} is one of {@link Byte},
      * {@link Short}, {@link Integer}, {@link Long}, {@link Float},
      * {@link Double}; otherwise false.
-     * @param obj the class to query
+     * @param clz the class to query
      * @return true if th given {@code clz} is one of {@link Byte},
      * {@link Short}, {@link Integer}, {@link Long}, {@link Float},
      * {@link Double}; otherwise false.

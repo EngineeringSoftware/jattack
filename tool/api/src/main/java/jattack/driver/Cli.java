@@ -267,6 +267,10 @@ public class Cli {
             Config.ignoreJDKClasses = value.isEmpty() || Boolean.parseBoolean(value);
             break;
         }
+        case "skipExceptionInArgumentMethodOutput": {
+            Config.skipExceptionInArgumentMethodOutput = value.isEmpty() || Boolean.parseBoolean(value);
+            break;
+        }
         default:
             throw new RuntimeException("Unrecognized option: " + key);
         }

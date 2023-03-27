@@ -84,7 +84,7 @@ public class Driver {
     private static WrappedChecksum checksum; // for testing, only used when Config.mimicExecution is on
 
     // flags per gen
-    private static boolean hasCompilingIssueInHotFilling;
+    private static boolean skipCurrentGeneratedProgram;
 
     /* Profiling. */
     private static long totalExecTime = 0;
@@ -369,7 +369,7 @@ public class Driver {
             // should drop it.
             // TODO: cache this generated program so we can
             //  know early if we generate it again
-            hasCompilingIssueInHotFilling = true;
+            skipCurrentGeneratedProgram = true;
         }
     }
 
@@ -387,6 +387,11 @@ public class Driver {
         try {
             argsIncludingReceiverIfExists = execAndGetArgValues();
         } catch (InvocationTargetException e) {
+            if (Config.skipExceptionInArgumentMethodOutput) {
+                // We will skip outputing the generated program
+                skipCurrentGeneratedProgram = true;
+                return;
+            }
             handleExceptionInInvocation(e);
             // return earlier as an exception was thrown when invoking
             // argument(s) methods
@@ -617,7 +622,7 @@ public class Driver {
         }
 
         // reset flags.
-        hasCompilingIssueInHotFilling = false;
+        skipCurrentGeneratedProgram = false;
 
         // reset profiling counters
         resetRuntimeStatsCounters();
@@ -758,9 +763,8 @@ public class Driver {
             Data.setFirstHoleIdxThatShouldStepInNextRun();
         }
 
-        // If we already know something is not compilable from
-        // previous execution, skip this output
-        if (hasCompilingIssueInHotFilling) {
+        // Skip this output if needed
+        if (skipCurrentGeneratedProgram) {
             Data.repeatedTrials += 1;
             return Data.isDone();
         }
