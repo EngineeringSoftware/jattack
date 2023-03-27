@@ -14,6 +14,7 @@ public class SkTestHoleInStaticInitializer {
 
     @Entry
     public static int m() {
+        System.out.println("f = " + f);
         return makeInt();
     }
 

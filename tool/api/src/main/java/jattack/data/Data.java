@@ -425,6 +425,14 @@ public class Data {
     }
 
     /**
+     * Get the decalring type of the given symbol (field or local
+     * variable).
+     */
+    public static Class<?> getDeclaringTypeOfSymbol(String name) {
+        return desc2Clz(memory.getTable().get(name).getDesc());
+    }
+
+    /**
      * Gets the runtime value of the given symbol (field or local
      * variable). Returning {@code null} means the value is
      * {@code null}. If the symbol is not found in memory, an
@@ -435,31 +443,34 @@ public class Data {
     }
 
     public static Set<String> getSymbolsOfType(Class<?> type) {
-        try {
-            if (Config.staticGen) {
-                return staticGetSymbolsOfType(type);
-            } else {
-                return getSymbolsOfTypeFromMemory(type);
-            }
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        if (Config.staticGen) {
+            return staticGetSymbolsOfType(type);
+        } else {
+            return getSymbolsOfTypeFromMemory(type);
         }
     }
 
-    private static Set<String> getSymbolsOfTypeFromMemory(Class<?> assignedType)
-            throws ClassNotFoundException {
+    private static Set<String> getSymbolsOfTypeFromMemory(Class<?> assignedType) {
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
         for (RuntimeSymbol symbol : memory.getTable().values()) {
             String name = symbol.getName();
             String sDesc = symbol.getDesc();
             // We use declaring type rather than runtime type because
             // hole filling is on source code level
-            Class<?> sDeclType = Class.forName(TypeUtil.desc2Bin(sDesc));
+            Class<?> sDeclType = desc2Clz(sDesc);
             if (assignedType.isAssignableFrom(sDeclType)) {
                 ids.add(name);
             }
         }
         return ids;
+    }
+
+    private static Class<?> desc2Clz(String desc) {
+        try {
+            return TypeUtil.loadClz(TypeUtil.desc2Bin(desc));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /*----- Data Collected from first loading template classes -----*/
@@ -560,17 +571,15 @@ public class Data {
         currHoleId = holeId;
     }
 
-    private static Set<String> staticGetSymbolsOfType(Class<?> type)
-            throws ClassNotFoundException {
+    private static Set<String> staticGetSymbolsOfType(Class<?> type) {
         return staticGetSymbolsOfType(type, currHoleId);
     }
 
-    private static Set<String> staticGetSymbolsOfType(Class<?> type, int hole)
-            throws ClassNotFoundException {
+    private static Set<String> staticGetSymbolsOfType(Class<?> type, int hole) {
         Set<Symbol> avilableSymbols = symbolsByHole.get(hole);
         TreeSet<String> ids = new TreeSet<>(String::compareTo);
         for (Symbol s : avilableSymbols) {
-            Class<?> sType = Class.forName(TypeUtil.desc2Bin(s.getDesc()));
+            Class<?> sType = desc2Clz(s.getDesc());
             if (type.isAssignableFrom(sType)) {
                 ids.add(s.getName());
             }

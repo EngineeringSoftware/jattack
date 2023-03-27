@@ -53,8 +53,7 @@ public abstract class IdExp<T> extends LHSExp<T>
         // Cast to the expected type if we are not already of that
         // type, the casting is safe since the actual type is
         // guaranteed to be a subtype of the expected type.
-        T val = getVal();
-        if (val != null && getType() != val.getClass()) {
+        if (getType() != Data.getDeclaringTypeOfSymbol(id)) {
             return "((" + getType().getCanonicalName() + ")" + id + ")";
         }
         return id;
