@@ -54,7 +54,7 @@ public class T {
 ```
 
 2. JAttack executes the given template to generate concrete Java
-   programs. For example, One of the generated programs from the
+   programs. For example, one generated program from the
    template `T.java` can be `TGen1.java`.
 
 ```java
@@ -65,7 +65,6 @@ import org.csutil.checksum.WrappedChecksum;
 public class TGen1 {
 
     static int s1;
-
     static int s2;
 
     public static int m() {
@@ -195,7 +194,7 @@ cd tool
           [/home/zzq/opt/jdk-17.0.3,[]]]"
   ```
 
-  The `java_envs` argument is a list, which can be also appended using
+  The `java_envs` argument is a list, which can also be appended using
   `--java_envs+=`, for example, the command above can be rewritten as:
   ```bash
   ./tool/jattack --clz T --n_gen 3 \
@@ -304,31 +303,30 @@ not ok 1 - TGen1
 ```
 
 After the run, a hidden directory `.jattack` is created under
-current working directory as the following structure:
+current working directory with the following structure:
 ```
 .jattack
     - logs # logs of runs
-      - 1668918602126595408.log
+      - 1679956565593918684.log
     - T
       - build # Java class files
-        - T.class
-        - TGen1.class
-        - TGen2.class
         - TGen3.class
       - gen # Generated programs from the template
-        - TGen1.java
-        - TGen2.java
-        - TGen3.java
+        - Gen1
+          - TGen1.java
+        - Gen2
+          - TGen2.java
+        - Gen3
+          - TGen3.java
       - output # Outputs of generated programs executed on different java environments
-        - TGen1
-          - java_env0.txt # Output from execution on java_envs[0]
+        - Gen1
+          - he_err_pid693345.log # error data file of the crash
           - java_env1.txt # Output from execution on java_envs[1]
-          - replay_pid2327972.log # replay data file of the crash
-          - he_err_pid2327972.log # error data file of the crash
-        - TGen2
-          - java_env0.txt
+          - replay_pid693345.log # replay data file of the crash
+        - Gen2
+          - java_env0.txt # Output from execution on java_envs[0]
           - java_env1.txt
-        - TGen3
+        - Gen3
           - java_env0.txt
           - java_env1.txt
 ```
