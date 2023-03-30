@@ -5,6 +5,7 @@ import jattack.ast.exp.iterator.ChainItr;
 import jattack.ast.exp.iterator.ExpItr;
 import jattack.ast.exp.iterator.Itr;
 import jattack.ast.visitor.Visitor;
+import jattack.data.Data;
 import jattack.driver.Driver;
 import jattack.util.TypeUtil;
 
@@ -99,17 +100,31 @@ public class RefArrAccessExp<E, A> extends LHSExp<E> {
     }
 
     private void setIndexFromCurrentId() {
-        int len = Config.staticGen ?
-                // We have no way to know the length of an array if we
-                // do static generation. Thus, we guess one.
-                Driver.rand.nextInt(1, 1001) :
-                Array.getLength(id.evaluate());
+        int len = 0;
+        try {
+            len = Config.staticGen ?
+                    // We have no way to know the length of an array if we
+                    // do static generation. Thus, we guess one.
+                    Driver.rand.nextInt(1, 1001) :
+                    Array.getLength(id.evaluate());
+        } catch (Throwable e) {
+            if (!Data.isInvocationTemplateException(e)) {
+                throw e;
+            }
+            // If this is some runtime exception from evaluating the
+            // template, e.g., divided by zero, array out of bound,
+            // etc, we should not throw now because we still want to
+            // fill the hole; otherwise we would leave the reachable
+            // hole unfilled.
+        }
         if (len == 0) {
-            // We force an index 0 when id is an empty array. After
-            // all, we just want to fill it somehow so an
-            // IndexOutOfBoundException can be thrown when the
-            // generated program is executed.
-            // TODO: but what is the expected thing to do?
+            // 1) We force an index 0 when id is an empty array, so
+            // executing the generated program will throw the same
+            // IndexOutOfBoundException although with a different
+            // index value.
+            // 2) When some exception is thrown from evaluating id,
+            // we should suppress the exception until we finish
+            // filling in the hole. Any number for index works.
             index = new ImIntVal(0);
             return;
         }
