@@ -119,7 +119,7 @@ public class InMemoryCompiler {
 
     private void transformBytecode() {
         Data.resetOffsetsOfEvals();
-        Data.resetLocalVars();
+        Data.resetAccessibleLocalVars();
         for (Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
             String className = entry.getKey();
             byte[] bytes = entry.getValue();

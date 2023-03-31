@@ -7,7 +7,6 @@ import jattack.bytecode.Var;
 import jattack.util.TypeUtil;
 import jattack.util.UniqueList;
 
-import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Class to store metadata used.
@@ -355,27 +355,10 @@ public class Data {
     /*------------------------ Infer variables ---------------------*/
 
     /**
-     * Local variables for every method.
-     * <p>
-     * Reset per bytecode manipulation in in-memory compiler.
-     */
-    private static Map<String, UniqueList<Var>> localVars;
-
-    public static void addToLocalVars(String fullMethodName, Set<Var> variables) {
-        localVars.put(fullMethodName, new UniqueList<>(variables));
-    }
-
-    public static void resetLocalVars() {
-        localVars = new HashMap<>();
-    }
-
-    public static UniqueList<Var> getLocalVarsOfMethod(String fullMethodName) {
-        return localVars.get(fullMethodName);
-    }
-
-    /**
      * Offsets of all eval() in the order of occurrence for every
      * method.
+     * <p>
+     * Reset per bytecode manipulation in in-memory compiler.
      */
     private static Map<String, Deque<Integer>> offsetsOfEvals;
 
@@ -383,12 +366,51 @@ public class Data {
         return offsetsOfEvals.get(fullMethodName);
     }
 
-    public static void addToOffsetsOfEvals(String fullMethodName, int offset) {
-        offsetsOfEvals.putIfAbsent(fullMethodName, new ArrayDeque<>());
-        offsetsOfEvals.get(fullMethodName).offer(offset);
+    public static void addToOffsetsOfEvals(
+            String fullMethodName, Deque<Integer> offsets) {
+        offsetsOfEvals.put(fullMethodName, offsets);
     }
+
     public static void resetOffsetsOfEvals() {
         offsetsOfEvals = new HashMap<>();
+    }
+
+    /**
+     * The set of local variables that are accessible in every eval()
+     * for every method.
+     * <p>
+     * Reset per bytecode manipulation in in-memory compiler.
+     */
+    private static Map<String, Map<Integer, Set<Var>>> accessibleLocalVars;
+
+    public static Set<Var> getAccessibleLocalVars(String fullMethodName, int offset) {
+        return accessibleLocalVars.get(fullMethodName).get(offset);
+    }
+
+    public static void addToAccessibleVarsInEachEval(
+            String fullMethodName,
+            Set<Var> localVarsOfTheMethod,
+            Deque<Integer> offsetsOfEvalsInTheMethod) {
+        if (!offsetsOfEvals.containsKey(fullMethodName)) {
+            // no eval() in this method
+            return;
+        }
+        Map<Integer, Set<Var>> m = new HashMap<>();
+        for (int offset : offsetsOfEvalsInTheMethod) {
+            m.put(offset, getAccessibleVarsForSingleEval(offset, localVarsOfTheMethod));
+        }
+        accessibleLocalVars.put(fullMethodName, m);
+    }
+
+    private static Set<Var> getAccessibleVarsForSingleEval(
+            int offset, Set<Var> localVars) {
+        return localVars.stream()
+                    .filter(var -> var.isReachableAt(offset))
+                    .collect(Collectors.toSet());
+    }
+
+    public static void resetAccessibleLocalVars() {
+        accessibleLocalVars = new HashMap<>();
     }
 
     /**
@@ -409,6 +431,41 @@ public class Data {
 
     public static void addToMemory(String name, String desc, Object val) {
         memory.put(name, desc, val);
+    }
+
+    /* The following list of addToMemory is used only in
+     * instrumentation. */
+
+    public static void addToMemory(String name, String desc, boolean val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, byte val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, short val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, char val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, int val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, float val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, long val) {
+        addToMemory(name, desc, (Object) val);
+    }
+
+    public static void addToMemory(String name, String desc, double val) {
+        addToMemory(name, desc, (Object) val);
     }
 
     public static void updateMemory(String name, Object val) {
@@ -440,6 +497,41 @@ public class Data {
      */
     public static Object getFromMemoryValueOfSymbol(String name) {
         return memory.getValue(name);
+    }
+
+    /* The following list of getFromMemoryValueOfSymbol* is used only
+     * in instrumentation and guaranteed to be type safe. */
+
+    public static boolean getFromMemoryValueOfSymbolZ(String name) {
+        return (boolean) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static byte getFromMemoryValueOfSymbolB(String name) {
+        return (byte) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static short getFromMemoryValueOfSymbolS(String name) {
+        return (short) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static char getFromMemoryValueOfSymbolC(String name) {
+        return (char) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static int getFromMemoryValueOfSymbolI(String name) {
+        return (int) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static float getFromMemoryValueOfSymbolF(String name) {
+        return (float) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static long getFromMemoryValueOfSymbolJ(String name) {
+        return (long) getFromMemoryValueOfSymbol(name);
+    }
+
+    public static double getFromMemoryValueOfSymbolD(String name) {
+        return (double) getFromMemoryValueOfSymbol(name);
     }
 
     public static Set<String> getSymbolsOfType(Class<?> type) {

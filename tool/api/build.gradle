@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'jattack'
-version '0.84.8'
+version '0.84.9'
 
 repositories {
     mavenCentral()

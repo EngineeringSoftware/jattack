@@ -9,7 +9,6 @@ import jattack.util.TypeUtil;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -115,31 +114,22 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             throw new RuntimeException("Queue of evals is empty!");
         }
         int offset = m_offsets.poll();
-        // TODO: improve search efficiency with ordered data
-        //  structure.
-        Set<Var> availableVars = new HashSet<>();
-        for (Var var : Data.getLocalVarsOfMethod(m_fullMethodName)) {
-            if (var.isReachableAt(offset)) {
-                availableVars.add(var);
-            }
-        }
+        Set<Var> availableVars = Data.getAccessibleLocalVars(m_fullMethodName, offset);
 
         // Save values of variables
         invokeResetMemory();
-        saveLocalVarValues(availableVars, offset);
+        saveLocalVarValues(availableVars);
         saveFieldValues();
 
         // invoke original eval()
         super.visitMethodInsn(opcode, owner, name, desc, isInterface);
 
         // Update values of variables
-        updateLocalVarValues(availableVars, offset);
+        updateLocalVarValues(availableVars);
         updateFieldValues();
-        invokeResetMemory(); // Release references to help GC
     }
 
     private void saveFieldValues() {
-        invokeInitFieldAnalyzer();
         if (m_isStatic || !thisInitialized) {
             // Get the fields accessible statically
             // when the hole is in a static method or in a constructor
@@ -152,7 +142,6 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             super.visitLdcInsn(Type.getObjectType(m_className));
             invokeFindFieldsForObject();
         }
-        invokeSaveFieldValues();
     }
 
     private void updateFieldValues() {
@@ -164,7 +153,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      * at the current execution point from <code>Data.memory</code>
      * and update them.
      */
-    private void updateLocalVarValues(Set<Var> availableVars, int offset) {
+    private void updateLocalVarValues(Set<Var> availableVars) {
         for (Var var : availableVars) {
             if (var.getName().equals("this")) {
                 // we cannot update "this"
@@ -181,13 +170,9 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
              * XSTORE index: value -> [empty]
              */
             super.visitLdcInsn(var.getName());
-            invokeGetFromMemoryValueOfVar();
-            // type casting
-            if (TypeUtil.isDescPrimitive(desc)) {
-                // cast to boxed types and then unbox
-                super.visitTypeInsn(Opcodes.CHECKCAST, TypeUtil.primitiveDescToBoxedInternName(desc));
-                invokeUnboxing(desc);
-            } else {
+            invokeGetFromMemoryValueOfVar(desc);
+            if (!TypeUtil.isDescPrimitive(desc)) {
+                // type casting for reference types
                 super.visitTypeInsn(Opcodes.CHECKCAST, TypeUtil.desc2Intern(desc));
             }
             storeLocalVar(desc, var.getIndex());
@@ -199,7 +184,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
      * at the current execution point and put them in
      * <code>Data.memory</code>.
      */
-    private void saveLocalVarValues(Set<Var> availableVars, int offset) {
+    private void saveLocalVarValues(Set<Var> availableVars) {
         for (Var var : availableVars) {
             if (!thisInitialized && var.getName().equals("this")) {
                 // cannot save "this" as it has not been initialized
@@ -217,10 +202,7 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
             super.visitLdcInsn(var.getName());
             super.visitLdcInsn(desc);
             loadLocalVar(desc, var.getIndex());
-            if (TypeUtil.isDescPrimitive(desc)) {
-                invokeBoxing(desc); // boxing
-            }
-            invokeAddToMemory();
+            invokeAddToMemory(desc);
         }
     }
 
@@ -251,6 +233,78 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
         } else {
             throw new RuntimeException("Unexpected type: " + desc);
         }
+    }
+
+    /**
+     * {@code Data.resetMemory()};
+     */
+    private void invokeResetMemory() {
+        super.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Constants.DATA_CLZ_INTERN_NAME,
+                Constants.RESET_MEMORY_METH_NAME,
+                Constants.RESET_MEMORY_METH_DESC,
+                false);
+    }
+
+    /**
+     * {@code Data.getFromMemoryValueOfVar(String)};
+     */
+    private void invokeGetFromMemoryValueOfVar(String desc) {
+        super.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Constants.DATA_CLZ_INTERN_NAME,
+                Constants.getGetFromMemoryValueOfSymbolMethName(desc),
+                Constants.getGetFromMemoryValueOfSymbolMethDesc(desc),
+                false);
+    }
+
+    /**
+     * {@code Data.addToMemory(String,String,<type>);}
+     */
+    private void invokeAddToMemory(String desc) {
+        super.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Constants.DATA_CLZ_INTERN_NAME,
+                Constants.ADD_TO_MEMORY_METH_NAME,
+                Constants.getAddToMemoryMethDesc(desc),
+                false);
+    }
+
+    /**
+     * {@code FieldAnalyzer.findFields(Object,Class<?>);}
+     */
+    private void invokeFindFieldsForObject() {
+        super.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
+                Constants.FIND_FIELDS_FOR_OBJECT_METH_NAME,
+                Constants.FIND_FIELDS_FOR_OBJECT_METH_DESC,
+                false);
+    }
+
+    /**
+     * {@code FieldAnalyzer.findFields(Class<?>);}
+     */
+    private void invokeFindFieldsForClass() {
+        super.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
+                Constants.FIND_FIELDS_FOR_CLASS_METH_NAME,
+                Constants.FIND_FIELDS_FOR_CLASS_METH_DESC,
+                false);
+    }
+
+    /**
+     * {@code FieldAnalyzer.updateFieldValues();}
+     */
+    private void invokeUpdateFieldValues() {
+        super.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
+                Constants.UPDATE_FIELD_VALUES_METH_NAME,
+                Constants.UPDATE_FIELD_VALUES_METH_DESC,
+                false);
     }
 
     /**
@@ -289,102 +343,6 @@ public class SaveLocalVarValuesMethodVisitor extends MethodVisitor {
                 "valueOf",
                 String.format("(%s)%s", primitiveDesc, boxedDesc),
                 false); // boxing
-    }
-
-    /**
-     * Data.resetMemory();
-     */
-    private void invokeResetMemory() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.DATA_CLZ_INTERN_NAME,
-                Constants.RESET_MEMORY_METH_NAME,
-                Constants.RESET_MEMORY_METH_DESC,
-                false);
-    }
-
-    /**
-     * Data.getFromMemoryValueOfVar(String);
-     */
-    private void invokeGetFromMemoryValueOfVar() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.DATA_CLZ_INTERN_NAME,
-                Constants.GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_NAME,
-                Constants.GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_DESC,
-                false);
-    }
-
-    /**
-     * {@code Data.addToMemory(String, Object);}
-     */
-    private void invokeAddToMemory() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.DATA_CLZ_INTERN_NAME,
-                Constants.ADD_TO_MEMORY_METH_NAME,
-                Constants.ADD_TO_MEMORY_METH_DESC,
-                false);
-    }
-
-    /**
-     * {@code FieldAnalyzer.initFieldAnalyzer();}
-     */
-    private void invokeInitFieldAnalyzer() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.INIT_FIELD_ANALYZER_METH_NAME,
-                Constants.INIT_FIELD_ANALYZER_METH_DESC,
-                false);
-    }
-
-    /**
-     * {@code FieldAnalyzer.findFields(Object,Class<?>);}
-     */
-    private void invokeFindFieldsForObject() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.FIND_FIELDS_FOR_OBJECT_METH_NAME,
-                Constants.FIND_FIELDS_FOR_OBJECT_METH_DESC,
-                false);
-    }
-
-    /**
-     * {@code FieldAnalyzer.findFields(Class<?>);}
-     */
-    private void invokeFindFieldsForClass() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.FIND_FIELDS_FOR_CLASS_METH_NAME,
-                Constants.FIND_FIELDS_FOR_CLASS_METH_DESC,
-                false);
-    }
-
-    /**
-     * {@code FieldAnalyzer.saveFieldValues();}
-     */
-    private void invokeSaveFieldValues() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.SAVE_FIELD_VALUES_METH_NAME,
-                Constants.SAVE_FIELD_VALUES_METH_DESC,
-                false);
-    }
-
-    /**
-     * {@code FieldAnalyzer.updateFieldValues();}
-     */
-    private void invokeUpdateFieldValues() {
-        super.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                Constants.FIELD_ANALYZER_CLZ_INTERN_NAME,
-                Constants.UPDATE_FIELD_VALUES_METH_NAME,
-                Constants.UPDATE_FIELD_VALUES_METH_DESC,
-                false);
     }
 
     private void pushIntOntoStack(int number) {

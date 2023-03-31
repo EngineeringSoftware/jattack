@@ -2,6 +2,7 @@ package jattack;
 
 import org.objectweb.asm.Opcodes;
 import jattack.ast.Node;
+import jattack.util.TypeUtil;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -67,10 +68,10 @@ public class Constants {
             String.format("(I)%s", OBJECT_TYPE_DESC);
     public static final String INIT_FIELD_ANALYZER_METH_NAME = "initFieldAnalyzer";
     public static final String INIT_FIELD_ANALYZER_METH_DESC = "()V";
-    public static final String FIND_FIELDS_FOR_OBJECT_METH_NAME = "findFieldsForObject";
+    public static final String FIND_FIELDS_FOR_OBJECT_METH_NAME = "findAndSaveFieldsForObject";
     public static final String FIND_FIELDS_FOR_OBJECT_METH_DESC =
             String.format("(%s%s)V", OBJECT_TYPE_DESC, CLASS_TYPE_DESC);
-    public static final String FIND_FIELDS_FOR_CLASS_METH_NAME = "findFieldsForClass";
+    public static final String FIND_FIELDS_FOR_CLASS_METH_NAME = "findAndSaveFieldsForClass";
     public static final String FIND_FIELDS_FOR_CLASS_METH_DESC =
             String.format("(%s)V", CLASS_TYPE_DESC);
     public static final String SAVE_FIELD_VALUES_METH_NAME = "saveFieldValues";
@@ -80,12 +81,28 @@ public class Constants {
     public static final String RESET_MEMORY_METH_NAME = "resetMemory";
     public static final String RESET_MEMORY_METH_DESC = "()V";
     public static final String ADD_TO_MEMORY_METH_NAME = "addToMemory";
-    public static final String ADD_TO_MEMORY_METH_DESC =
-            String.format("(%s%s%s)V", STRING_TYPE_DESC, STRING_TYPE_DESC, OBJECT_TYPE_DESC);
-    public static final String GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_NAME =
-            "getFromMemoryValueOfSymbol";
-    public static final String GET_FROM_MEMORY_VALUE_OF_SYMBOL_METH_DESC =
-            String.format("(%s)%s", STRING_TYPE_DESC, OBJECT_TYPE_DESC);
+
+    public static final String getAddToMemoryMethDesc(String typeDesc) {
+        return String.format("(%s%s%s)V",
+                        STRING_TYPE_DESC,
+                        STRING_TYPE_DESC,
+                        TypeUtil.toBaseTypeDesc(typeDesc));
+    }
+
+    public static final String getGetFromMemoryValueOfSymbolMethName(String typeDesc) {
+        String name = "getFromMemoryValueOfSymbol";
+        if (TypeUtil.isDescPrimitive(typeDesc)) {
+            name += typeDesc;
+        }
+        return name;
+    }
+
+    public static final String getGetFromMemoryValueOfSymbolMethDesc(String typeDesc) {
+        return String.format("(%s)%s",
+                        STRING_TYPE_DESC,
+                        TypeUtil.toBaseTypeDesc(typeDesc));
+    }
+
     public static final Set<String> API_NAMES =
             Arrays.stream(Boom.class.getDeclaredMethods())
                 .filter(m -> Node.class.isAssignableFrom(m.getReturnType()))

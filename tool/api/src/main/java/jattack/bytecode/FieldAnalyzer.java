@@ -44,16 +44,14 @@ public class FieldAnalyzer {
 
     /**
      * Initialize a field analyzer.
-     * <p>
-     * Used through instrumentation.
      */
-    public static void initFieldAnalyzer() {
+    private static void initFieldAnalyzer() {
         fieldAnalyzer = new FieldAnalyzer();
     }
 
     /**
      * Find all the available fields from the context of an instance
-     * method.
+     * method and save the values of those fields.
      * <p>
      * clz does not have to be obj.getClass() because we might be
      * looking for available fields in a superclass while using an
@@ -62,28 +60,31 @@ public class FieldAnalyzer {
      * <p>
      * Used through instrumentation.
      */
-    public static void findFieldsForObject(Object obj, Class<?> clz) {
+    public static void findAndSaveFieldsForObject(Object obj, Class<?> clz) {
+        initFieldAnalyzer();
         Set<Field> fields = collectFieldsForSingleClz(clz);
         createFlds(fields, obj);
+        saveFieldValues();
     }
 
     /**
      * Find all the available fields from the context of a static
-     * method.
+     * method and save the values of those fields.
      * <p>
      * Used through instrumentation.
      */
-    public static void findFieldsForClass(Class<?> clz) {
+    public static void findAndSaveFieldsForClass(Class<?> clz) {
+        initFieldAnalyzer();
         Set<Field> fields = collectStaticFieldsForSingleClz(clz);
         createFlds(fields, null);
+        saveFieldValues();
     }
 
     private static void createFlds(Set<Field> fields, Object obj) {
         for (Field f : fields) {
             if (Data.memoryContainsSymbol(f.getName())) {
-                // TODO: shadowing? For now we assume no shadowing
-                //  happens. We ignore the field if it is
-                //  shadowed.
+                // TODO: shadowing? For now we ignore the field if it
+                // is shadowed.
                 continue;
             }
             fieldAnalyzer.flds.add(new Fld(f, obj));
@@ -92,10 +93,8 @@ public class FieldAnalyzer {
 
     /**
      * Save the values of all the available fields.
-     * <p>
-     * Used through instrumentation.
      */
-    public static void saveFieldValues() {
+    private static void saveFieldValues() {
         fieldAnalyzer.saveFieldValues0();
     }
 
@@ -106,6 +105,11 @@ public class FieldAnalyzer {
      */
     public static void updateFieldValues() {
         fieldAnalyzer.updateFieldValues0();
+
+        // It makes more sense to put this line as an inserted
+        // instruction after eval() but putting here saves some bytes
+        // from MethodTooLargeException for us.
+        Data.resetMemory(); // Release references to help GC
     }
 
     private void saveFieldValues0() {

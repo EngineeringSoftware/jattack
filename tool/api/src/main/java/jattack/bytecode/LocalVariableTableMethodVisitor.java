@@ -7,6 +7,8 @@ import jattack.Constants;
 import jattack.data.Data;
 import jattack.util.TypeUtil;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,14 +20,16 @@ public class LocalVariableTableMethodVisitor extends MethodVisitor {
 
     private final String fullMethodName;
     private int currOffset;
+    private final Set<Var> localVariables;
+    private final Deque<Integer> offsetsOfEvals;
 
     public LocalVariableTableMethodVisitor(MethodVisitor mv, String fullMethodName) {
         super(Constants.ASM_VERSION, mv);
         this.fullMethodName = fullMethodName;
         this.currOffset = -1;
+        this.localVariables = new HashSet<>();
+        offsetsOfEvals = new ArrayDeque<>();
     }
-
-    private final Set<Var> localVariables = new HashSet<>();
 
     @Override
     public void visitLocalVariable(String name,
@@ -95,7 +99,7 @@ public class LocalVariableTableMethodVisitor extends MethodVisitor {
                 && name.equals(Constants.EVAL_METH_NAME)
                 && desc.equals(Constants.EVAL_METH_DESC)) {
             // Save current byteoffset
-            Data.addToOffsetsOfEvals(fullMethodName, currOffset);
+            offsetsOfEvals.offer(currOffset);
         }
         super.visitMethodInsn(opcode, owner, name, desc, isInterface);
     }
@@ -103,6 +107,8 @@ public class LocalVariableTableMethodVisitor extends MethodVisitor {
     @Override
     public void visitEnd() {
         super.visitEnd();
-        Data.addToLocalVars(fullMethodName, localVariables);
+        Data.addToOffsetsOfEvals(fullMethodName, offsetsOfEvals);
+        Data.addToAccessibleVarsInEachEval(
+            fullMethodName, localVariables, offsetsOfEvals);
     }
 }
