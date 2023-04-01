@@ -464,7 +464,7 @@ public class Driver {
     }
 
     private static long hashState(Object receiver, Object[] args) {
-        WrappedChecksum cs = new WrappedChecksum(Config.ignoreJDKClasses);
+        WrappedChecksum cs = new WrappedChecksum(false);
         allClzes.forEach(cs::updateStaticFieldsOfClass);
         cs.update(receiver);
         cs.update(args);

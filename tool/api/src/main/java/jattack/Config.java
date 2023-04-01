@@ -125,9 +125,14 @@ public class Config {
     public static boolean allowNonCompilableOutput = false;
 
     /**
-     * Determine if we ignore JDK classes when computing cheksums.
+     * Determine if we ignore JDK classes when computing cheksums in
+     * generated programs.
+     * <p>
+     * However, this will not change if we ignore JDK classes when
+     * hashing states for generation purpose. We always do beause
+     * otherwise we lose track of some state change.
      */
-    public static boolean ignoreJDKClasses = false;
+    public static boolean ignoreJDKClasses = true;
 
     /**
      * Determine if we skip outputting generated programs with the

@@ -263,6 +263,7 @@ public class WrappedChecksum {
                     checksumStackLevel.containerLevel.incSum(checksumStackLevel.getValue());
                 }
                 // Done with the object so we can pop it out
+                Log.debug("Done with object " + currIdsByObj.get(objWH) + objWH.obj.getClass().getName());
                 stack.pop();
                 continue;
             }
