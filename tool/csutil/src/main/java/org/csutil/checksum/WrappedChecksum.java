@@ -263,7 +263,7 @@ public class WrappedChecksum {
                     checksumStackLevel.containerLevel.incSum(checksumStackLevel.getValue());
                 }
                 // Done with the object so we can pop it out
-                Log.debug("Done with object " + currIdsByObj.get(objWH) + objWH.obj.getClass().getName());
+                Log.debug("Done with object " + currIdsByObj.get(objWH) + " " + objWH.obj.getClass().getName());
                 stack.pop();
                 continue;
             }
@@ -346,14 +346,9 @@ public class WrappedChecksum {
             Log.debug("Checksum array " + container.getClass().getName());
             // We reverse the order of elements when pushing onto
             // the stack
-            LinkedList<Object> revStack = new LinkedList<>();
-            for (int i = 0; i < Array.getLength(container); ++i) {
+            for (int i = Array.getLength(container) - 1; i >= 0; --i) {
                 Object e = Array.get(container, i);
-                revStack.push(e);
-            }
-            while (!revStack.isEmpty()) {
-                Object elem = revStack.pop();
-                pushObjectOntoStack(stack, visited, idsByObj, elem, checksum, ignoreJavaClasses);
+                pushObjectOntoStack(stack, visited, idsByObj, e, checksum, ignoreJavaClasses);
             }
             return;
         }
@@ -661,9 +656,12 @@ public class WrappedChecksum {
         }
     }
 
+    /**
+     * Wrap an object, guaranteeing uniqueness when using
+     * equals(Object).
+     */
     private static final class ObjectWithHash {
         private final Object obj;
-        private final int hash;
         private final boolean isElementOfUnorderedContainer;
         private boolean isUnorderedContainer;
         private boolean startedChecksum;
@@ -672,7 +670,6 @@ public class WrappedChecksum {
                 Object object,
                 boolean isElementOfUnorderedContainer) {
             obj = object;
-            hash = System.identityHashCode(obj);
             this.isElementOfUnorderedContainer = isElementOfUnorderedContainer;
         }
 
@@ -685,12 +682,15 @@ public class WrappedChecksum {
                 return false;
             }
             ObjectWithHash that = (ObjectWithHash) o;
-            return hash == that.hash;
+            // We don't use hash to check equality because because
+            // System.identityHashCode(Object) does not guarantee
+            // uniqueness and it did collide in the past.
+            return obj == that.obj;
         }
 
         @Override
         public int hashCode() {
-            return hash;
+            return System.identityHashCode(obj);
         }
     }
 
