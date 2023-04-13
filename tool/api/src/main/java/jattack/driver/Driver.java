@@ -388,6 +388,11 @@ public class Driver {
             argsIncludingReceiverIfExists = execAndGetArgValues();
         } catch (InvocationTargetException e) {
             if (Config.skipExceptionInArgumentMethodOutput) {
+                if (Log.getLevel().getOrder() >= Log.Level.DEBUG.getOrder()) {
+                    StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+                    Log.debug(sw.toString());
+                }
                 // We will skip outputing the generated program
                 skipCurrentGeneratedProgram = true;
                 return;
