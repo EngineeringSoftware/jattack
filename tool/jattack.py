@@ -242,7 +242,7 @@ def exceute_and_test(
                 f"{java} -cp {cp}" +\
                 " " + " ".join(JAVA_OPTS) +\
                 f" {opts}"
-                f" -XX:ErrorFile={output_dir_per_gen}/he_err_pid%p.log"
+                f" -XX:ErrorFile={output_dir_per_gen}/hs_err_pid%p.log"
                 f" -XX:ReplayDataFile={output_dir_per_gen}/replay_pid%p.log"
                 f" {gen_clz} --outFilePath='{output_file}'"
             )
