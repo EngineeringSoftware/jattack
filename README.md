@@ -396,9 +396,9 @@ Thank you!
   author = {Zang, Zhiqiang and Yu, Fu-Yao and Wiatrek, Nathaniel and Gligoric, Milos and Shi, August},
   title = {{JA}ttack: {J}ava {JIT} Testing using Template Programs},
   booktitle = {International Conference on Software Engineering, Tool Demonstrations Track},
-  pages = {to appear},
+  pages = {6--10},
   year= {2023},
-  doi = {to appear},
+  doi = {10.1109/ICSE-Companion58688.2023.00014},
 }
 ```
 
