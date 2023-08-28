@@ -380,7 +380,6 @@ If you use JAttack in your research, we request you to cite our
 [ASE'22 paper](https://cptgit.github.io/dl/papers/zang22jattack.pdf)
 (which won an ACM SIGSOFT Distinguished Paper Award) and [ICSE'23 Demo
 paper](https://cptgit.github.io/dl/papers/zang23jattacktool.pdf).
-Thank you!
 
 ```bibtex
 @inproceedings{zang22jattack,
