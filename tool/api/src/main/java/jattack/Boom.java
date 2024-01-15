@@ -16,8 +16,13 @@ import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.Exp;
 import jattack.ast.exp.ImBoolVal;
+import jattack.ast.exp.ImByteVal;
+import jattack.ast.exp.ImCharVal;
 import jattack.ast.exp.ImDoubleVal;
+import jattack.ast.exp.ImFloatVal;
 import jattack.ast.exp.ImIntVal;
+import jattack.ast.exp.ImLongVal;
+import jattack.ast.exp.ImShortVal;
 import jattack.ast.exp.IntArrVal;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
@@ -207,42 +212,42 @@ public final class Boom {
 
     /*----------------------- Shift expressions --------------------*/
 
-    public static ShiftExp<Integer> shift(int left, String right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(int left, String right, ShiftOp... ops) {
         return shift(asInt(left), right, ops);
     }
 
-    public static ShiftExp<Integer> shift(String left, int right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(String left, int right, ShiftOp... ops) {
         return shift(left, asInt(right), ops);
     }
 
-    public static ShiftExp<Integer> shift(String left, String right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(String left, String right, ShiftOp... ops) {
         return shift(left, asIntIdOrIntArrAccess(right), ops);
     }
 
-    public static ShiftExp<Integer> shift(Exp<Integer> left, String right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(Exp<Integer> left, String right, ShiftOp... ops) {
         return shift(left, asIntIdOrIntArrAccess(right), ops);
     }
 
-    public static ShiftExp<Integer> shift(String left, Exp<Integer> right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(String left, Exp<Integer> right, ShiftOp... ops) {
         return shift(asIntIdOrIntArrAccess(left), right, ops);
     }
 
-    public static ShiftExp<Integer> shift(int left, int right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(int left, int right, ShiftOp... ops) {
         return shift(asInt(left), asInt(right), ops);
     }
 
-    public static ShiftExp<Integer> shift(int left, Exp<Integer> right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(int left, Exp<Integer> right, ShiftOp... ops) {
         return shift(asInt(left), right, ops);
     }
 
-    public static ShiftExp<Integer> shift(Exp<Integer> left, int right, ShiftOp... ops) {
+    public static ShiftExp<Integer, Integer> shift(Exp<Integer> left, int right, ShiftOp... ops) {
         return shift(left, asInt(right), ops);
     }
 
     /**
      * Bitwise and bit shift expression.
      */
-    public static <N extends Number> ShiftExp<N> shift(Exp<N> left, Exp<Integer> right, ShiftOp... ops) {
+    public static <N extends Number, M extends Number> ShiftExp<N, M> shift(Exp<N> left, Exp<M> right, ShiftOp... ops) {
         if (ops.length == 0) {
             ops = ShiftOp.values();
         }
@@ -715,7 +720,7 @@ public final class Boom {
      * expression, with indices auto inferred.
      */
     public static <E, A> RefArrAccessExp<E, A> refArrAccessExp(Class<E> cType, Class<A> aType, Exp<A> id) {
-        return new RefArrAccessExp<>(id);
+        return new RefArrAccessExp<>(cType, id);
     }
 
     /**
@@ -747,7 +752,7 @@ public final class Boom {
      * expression and an index number expression.
      */
     public static <E, A> RefArrAccessExp<E, A> refArrAccessExp(Class<E> cType, Class<A> aType, Exp<A> id, Exp<Integer> index) {
-        return new RefArrAccessExp<>(id, index);
+        return new RefArrAccessExp<>(cType, id, index);
     }
 
     /*------------------------ Literals ----------------------------*/
@@ -887,6 +892,34 @@ public final class Boom {
     }
 
     /**
+     * An immutable {@link boolean} literal.
+     */
+    public static ImBoolVal asBool(boolean val) {
+        return new ImBoolVal(val);
+    }
+
+    /**
+     * An immutable {@link char} literal.
+     */
+    public static ImCharVal asChar(char val) {
+        return new ImCharVal(val);
+    }
+
+    /**
+     * An immutable {@link byte} literal.
+     */
+    public static ImByteVal asByte(byte val) {
+        return new ImByteVal(val);
+    }
+
+    /**
+     * An immutable {@link short} literal.
+     */
+    public static ImShortVal asShort(short val) {
+        return new ImShortVal(val);
+    }
+
+    /**
      * An immutable {@link int} literal.
      */
     public static ImIntVal asInt(int val) {
@@ -894,12 +927,22 @@ public final class Boom {
     }
 
     /**
-     * An immutable {@link boolean} literal.
+     * An immutable {@link long} literal.
      */
-    public static ImBoolVal asBool(boolean val) {
-        return new ImBoolVal(val);
+    public static ImLongVal asLong(long val) {
+        return new ImLongVal(val);
     }
 
+    /**
+     * An immutable {@link float} literal.
+     */
+    public static ImFloatVal asFloat(float val) {
+        return new ImFloatVal(val);
+    }
+
+    /**
+     * An immutable {@link double} literal.
+     */
     public static ImDoubleVal asDouble(double val) {
         return new ImDoubleVal(val);
     }

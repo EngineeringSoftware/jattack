@@ -12,6 +12,11 @@ public final class ImDoubleVal extends ImVal<Double> {
     }
 
     @Override
+    public Class<Double> getType() {
+        return Double.class;
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             v.endVisit(this);

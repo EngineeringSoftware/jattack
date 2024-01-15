@@ -3,6 +3,7 @@ package jattack.ast.exp;
 import jattack.ast.exp.iterator.LitItr;
 import jattack.ast.visitor.Visitor;
 import jattack.driver.Driver;
+import jattack.util.TypeUtil;
 import jattack.util.UniqueList;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class CharVal extends LitExp<Character> {
     @Override
     public String asStr() {
         // Needs to escape single quote and backslash
-        return "'" + (val == '\'' || val == '\\' ? ("\\" + val) : val) + "'";
+        return "'" + TypeUtil.charAsString(getVal()) + "'";
     }
 
     @Override
@@ -53,6 +54,11 @@ public class CharVal extends LitExp<Character> {
     @Override
     public void stepRand() {
         val = Driver.rand.nextChar();
+    }
+
+    @Override
+    public Class<Character> getType() {
+        return Character.class;
     }
 
     @Override

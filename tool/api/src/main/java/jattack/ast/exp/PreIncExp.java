@@ -33,6 +33,11 @@ public class PreIncExp<N extends Number> extends Exp<N>
     }
 
     @Override
+    public Class<N> getType() {
+        return id.getType();
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             id.accept(v);

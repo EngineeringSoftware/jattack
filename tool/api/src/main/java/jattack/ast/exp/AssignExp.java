@@ -37,6 +37,11 @@ public class AssignExp<T> extends Exp<T> implements NodeWithSideEffect<T> {
     }
 
     @Override
+    public Class<T> getType() {
+        return target.getType();
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             value.accept(v);

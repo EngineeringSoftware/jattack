@@ -12,6 +12,11 @@ public class ImBoolVal extends ImVal<Boolean> {
     }
 
     @Override
+    public Class<Boolean> getType() {
+        return Boolean.class;
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             v.endVisit(this);

@@ -3,6 +3,9 @@ package jattack.ast.exp;
 import jattack.ast.exp.iterator.ImItr;
 import jattack.ast.nodetypes.TerminalNode;
 
+/**
+ * Common abstract class of immutable literal expressions.
+ */
 public abstract class ImVal<T> extends Exp<T>
         implements TerminalNode<T> {
 

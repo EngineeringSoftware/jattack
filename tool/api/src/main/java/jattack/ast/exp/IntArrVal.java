@@ -203,6 +203,11 @@ public class IntArrVal extends Exp<int[]> implements TerminalNode<int[]> {
     }
 
     @Override
+    public Class<int[]> getType() {
+        return int[].class;
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             v.endVisit(this);

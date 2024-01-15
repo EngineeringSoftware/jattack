@@ -3,17 +3,17 @@ package jattack.ast.exp;
 import jattack.ast.visitor.Visitor;
 
 /**
- * Immutable int literal expression.
+ * Immutable byte literal expression.
  */
-public final class ImIntVal extends ImVal<Integer> {
+public final class ImByteVal extends ImVal<Byte> {
 
-    public ImIntVal(int val) {
+    public ImByteVal(byte val) {
         super(val);
     }
 
     @Override
-    public Class<Integer> getType() {
-        return Integer.class;
+    public Class<Byte> getType() {
+        return Byte.class;
     }
 
     @Override
@@ -23,4 +23,3 @@ public final class ImIntVal extends ImVal<Integer> {
         }
     }
 }
-

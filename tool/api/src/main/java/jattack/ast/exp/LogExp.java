@@ -48,6 +48,11 @@ public class LogExp extends Exp<Boolean> implements NodeWithOperator<LogOp> {
     }
 
     @Override
+    public Class<Boolean> getType() {
+        return Boolean.class;
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             left.accept(v);

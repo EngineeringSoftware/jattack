@@ -48,6 +48,11 @@ public class RelExp<N extends Number> extends Exp<Boolean> implements NodeWithOp
     }
 
     @Override
+    public Class<Boolean> getType() {
+        return Boolean.class;
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             left.accept(v);

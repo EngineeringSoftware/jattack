@@ -13,8 +13,13 @@ import jattack.ast.exp.ShiftExp;
 import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.ImBoolVal;
+import jattack.ast.exp.ImByteVal;
+import jattack.ast.exp.ImCharVal;
 import jattack.ast.exp.ImDoubleVal;
+import jattack.ast.exp.ImFloatVal;
 import jattack.ast.exp.ImIntVal;
+import jattack.ast.exp.ImLongVal;
+import jattack.ast.exp.ImShortVal;
 import jattack.ast.exp.IntArrVal;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
@@ -56,7 +61,7 @@ public class PrintVisitor extends Visitor {
     }
 
     @Override
-    public <N extends Number> void endVisit(ShiftExp<N> node) {
+    public <N extends Number, M extends Number> void endVisit(ShiftExp<N, M> node) {
         String right = stack.pop();
         String left = stack.pop();
         stack.push(String.format("(%s %s %s)",
@@ -79,12 +84,27 @@ public class PrintVisitor extends Visitor {
     }
 
     @Override
+    public void endVisit(ImCharVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(ByteVal node) {
         endVisitTerminalNode(node);
     }
 
     @Override
+    public void endVisit(ImByteVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(ShortVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(ImShortVal node) {
         endVisitTerminalNode(node);
     }
 
@@ -104,7 +124,17 @@ public class PrintVisitor extends Visitor {
     }
 
     @Override
+    public void endVisit(ImLongVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(FloatVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(ImFloatVal node) {
         endVisitTerminalNode(node);
     }
 

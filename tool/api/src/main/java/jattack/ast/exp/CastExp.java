@@ -1,9 +1,8 @@
 package jattack.ast.exp;
 
-import jattack.ast.nodetypes.NodeWithType;
 import jattack.ast.visitor.Visitor;
 
-public class CastExp<T> extends Exp<T> implements NodeWithType<T> {
+public class CastExp<T> extends Exp<T> {
 
     private final Exp<?> exp;
     private final Class<T> type;

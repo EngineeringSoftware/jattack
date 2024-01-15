@@ -10,17 +10,18 @@ import java.util.List;
 
 /**
  * Binary shift expression. {@link N} can only be {@link Integer} or
- * {@link Long}.
+ * {@link Long}; so is {@link M}.
  */
-public class ShiftExp<N extends Number> extends Exp<N> implements NodeWithOperator<ShiftOp> {
+public class ShiftExp<N extends Number, M extends Number> extends Exp<N>
+        implements NodeWithOperator<ShiftOp> {
 
     private final Exp<N> left;
 
-    private final Exp<Integer> right;
+    private final Exp<M> right;
 
     private final OpNode<ShiftOp> op;
 
-    public ShiftExp(Exp<N> left, Exp<Integer> right, List<ShiftOp> operators) {
+    public ShiftExp(Exp<N> left, Exp<M> right, List<ShiftOp> operators) {
         this.left = left;
         this.right = right;
         this.op = new OpNode<>(operators);
@@ -49,11 +50,24 @@ public class ShiftExp<N extends Number> extends Exp<N> implements NodeWithOperat
     }
 
     @Override
+    public Class<N> getType() {
+        return left.getType();
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             left.accept(v);
             right.accept(v);
             v.endVisit(this);
         }
+    }
+
+    public Exp<N> getLeft() {
+        return left;
+    }
+
+    public Exp<M> getRight() {
+        return right;
     }
 }

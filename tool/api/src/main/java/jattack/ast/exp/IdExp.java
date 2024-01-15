@@ -1,7 +1,6 @@
 package jattack.ast.exp;
 
 import jattack.ast.exp.iterator.LitItr;
-import jattack.ast.nodetypes.NodeWithType;
 import jattack.ast.nodetypes.TerminalNode;
 import jattack.data.Data;
 import jattack.driver.Driver;
@@ -15,7 +14,7 @@ import java.util.Set;
  * A base class for all identifier expressions.
  */
 public abstract class IdExp<T> extends LHSExp<T>
-        implements TerminalNode<T>, NodeWithType<T> {
+        implements TerminalNode<T> {
 
     private UniqueList<String> ids;
 

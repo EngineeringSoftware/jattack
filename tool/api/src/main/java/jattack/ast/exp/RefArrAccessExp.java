@@ -17,19 +17,22 @@ import java.lang.reflect.Array;
  */
 public class RefArrAccessExp<E, A> extends LHSExp<E> {
 
+    private final Class<E> type;
+
     private final Exp<A> id;
 
     private Exp<Integer> index;
 
     private boolean inferIndices;
 
-    public RefArrAccessExp(Exp<A> id) {
+    public RefArrAccessExp(Class<E> type, Exp<A> id) {
         // Auto infer valid indices
-        this(id, null);
+        this(type, id, null);
         inferIndices = true;
     }
 
-    public RefArrAccessExp(Exp<A> id, Exp<Integer> index) {
+    public RefArrAccessExp(Class<E> type, Exp<A> id, Exp<Integer> index) {
+        this.type = type;
         this.id = id;
         this.index = index;
         this.inferIndices = false;
@@ -91,6 +94,22 @@ public class RefArrAccessExp<E, A> extends LHSExp<E> {
     }
 
     @Override
+    public void updateVal(E val) {
+        A arr = id.evaluate();
+        int i = index.evaluate();
+        TypeUtil.arraySet(arr, i, val);
+        if (!(id instanceof LHSExp)) {
+            throw new RuntimeException("Expected id is a LHSExp but it is " + id.getClass());
+        }
+        ((LHSExp<A>) id).updateVal(arr);
+    }
+
+    @Override
+    public Class<E> getType() {
+        return type;
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             index.accept(v);
@@ -129,16 +148,5 @@ public class RefArrAccessExp<E, A> extends LHSExp<E> {
             return;
         }
         index = new IntVal(0, len);
-    }
-
-    @Override
-    public void updateVal(E val) {
-        A arr = id.evaluate();
-        int i = index.evaluate();
-        TypeUtil.arraySet(arr, i, val);
-        if (!(id instanceof LHSExp)) {
-            throw new RuntimeException("Expected id is a LHSExp but it is " + id.getClass());
-        }
-        ((LHSExp<A>) id).updateVal(arr);
     }
 }

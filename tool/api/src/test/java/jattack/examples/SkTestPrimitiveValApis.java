@@ -11,15 +11,15 @@ public class SkTestPrimitiveValApis {
     public static void m() {
         boolean b = boolVal().eval();
         char c = charVal().eval();
-        m_byte();
-        m_short();
-        m_int();
-        m_long();
-        m_float();
-        m_double();
+        mByte();
+        mShort();
+        mInt();
+        mLong();
+        mFloat();
+        mDouble();
     }
 
-    private static void m_byte() {
+    private static void mByte() {
         byte n = byteVal().eval();
         byte low = -10;
         byte high = 10;
@@ -29,7 +29,7 @@ public class SkTestPrimitiveValApis {
         }
     }
 
-    private static void m_short() {
+    private static void mShort() {
         short n = shortVal().eval();
         short low = Byte.MIN_VALUE - 10;
         short high = Byte.MAX_VALUE + 10;
@@ -39,7 +39,7 @@ public class SkTestPrimitiveValApis {
         }
     }
 
-    private static void m_int() {
+    private static void mInt() {
         int n = intVal().eval();
         int low = Short.MIN_VALUE - 10;
         int high = Short.MAX_VALUE + 10;
@@ -49,7 +49,7 @@ public class SkTestPrimitiveValApis {
         }
     }
 
-    private static void m_long() {
+    private static void mLong() {
         long n = longVal().eval();
         long low = Integer.MIN_VALUE - 10L;
         long high = Integer.MAX_VALUE + 10L;
@@ -59,7 +59,7 @@ public class SkTestPrimitiveValApis {
         }
     }
 
-    private static void m_float() {
+    private static void mFloat() {
         float n = floatVal().eval();
         float low = -10.0F;
         float high = 10.0F;
@@ -69,7 +69,7 @@ public class SkTestPrimitiveValApis {
         }
     }
 
-    private static void m_double() {
+    private static void mDouble() {
         double n = doubleVal().eval();
         double low = -10.0;
         double high = 10.0;

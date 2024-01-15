@@ -18,8 +18,13 @@ import jattack.ast.exp.ShiftExp;
 import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.ImBoolVal;
+import jattack.ast.exp.ImByteVal;
+import jattack.ast.exp.ImCharVal;
 import jattack.ast.exp.ImDoubleVal;
+import jattack.ast.exp.ImFloatVal;
 import jattack.ast.exp.ImIntVal;
+import jattack.ast.exp.ImLongVal;
+import jattack.ast.exp.ImShortVal;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RefArrAccessExp;
@@ -143,19 +148,24 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
-    public <N extends Number> boolean visit(ShiftExp<N> node) {
+    public <N extends Number, M extends Number> boolean visit(ShiftExp<N, M> node) {
         return buildable;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <N extends Number> void endVisit(ShiftExp<N> node) {
+    public <N extends Number, M extends Number> void endVisit(ShiftExp<N, M> node) {
         if (!buildable) {
             return;
         }
         Expr right = stack.pop();
         Expr left = stack.pop();
-        Expr comb = node.getOp().buildZ3Expr(left, right, ctx);
+        Expr comb = node.getOp().buildZ3Expr(
+                left,
+                node.getLeft().getType().equals(Long.class),
+                right,
+                node.getRight().getType().equals(Long.class),
+                ctx);
         if (comb != null) {
             stack.push(comb);
         } else {
@@ -175,6 +185,17 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
+    public boolean visit(ImCharVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ImCharVal node) {
+        // TODO: I guess we cannot encode a char in Z3?
+        buildable = false;
+    }
+
+    @Override
     public boolean visit(ByteVal node) {
         return buildable;
     }
@@ -185,12 +206,32 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
+    public boolean visit(ImByteVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ImByteVal node) {
+        stack.push(ctx.mkInt(node.getVal()));
+    }
+
+    @Override
     public boolean visit(ShortVal node) {
         return buildable;
     }
 
     @Override
     public void endVisit(ShortVal node) {
+        stack.push(ctx.mkInt(node.getVal()));
+    }
+
+    @Override
+    public boolean visit(ImShortVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ImShortVal node) {
         stack.push(ctx.mkInt(node.getVal()));
     }
 
@@ -225,12 +266,34 @@ public class Z3ExprBuilder extends Visitor {
     }
 
     @Override
+    public boolean visit(ImLongVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ImLongVal node) {
+        stack.push(ctx.mkInt(node.getVal()));
+    }
+
+    @Override
     public boolean visit(FloatVal node) {
         return buildable;
     }
 
     @Override
     public void endVisit(FloatVal node) {
+        // Skip float point numbers because for example,
+        // x == x is not always true when x is NaN.
+        buildable = false;
+    }
+
+    @Override
+    public boolean visit(ImFloatVal node) {
+        return buildable;
+    }
+
+    @Override
+    public void endVisit(ImFloatVal node) {
         // Skip float point numbers because for example,
         // x == x is not always true when x is NaN.
         buildable = false;

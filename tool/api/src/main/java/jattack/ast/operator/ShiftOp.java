@@ -21,17 +21,36 @@ public enum ShiftOp implements AriOrShiftOp {
         return strRep;
     }
 
-    public Number apply(Number left, int right) {
-        if (left instanceof Integer) {
-            return apply(left.intValue(), right);
-        } else if (left instanceof Long) {
-            return apply(left.longValue(), right);
+    public Number apply(Number left, Number right) {
+        if (left instanceof Integer && right instanceof Integer) {
+            return apply(left.intValue(), right.intValue());
+        } else if (left instanceof Integer && right instanceof Long) {
+            return apply(left.intValue(), right.longValue());
+        } else if (left instanceof Long && right instanceof Integer) {
+            return apply(left.longValue(), right.intValue());
+        } else if (left instanceof Long && right instanceof Long) {
+            return apply(left.longValue(), right.longValue());
         } else {
-            throw new RuntimeException("Unsupported type: " + left.getClass());
+            throw new RuntimeException(
+                    "Unsupported type(s): left " + left.getClass() +
+                    "and/or right " + right.getClass());
         }
     }
 
     private int apply(int left, int right) {
+        switch (this) {
+        case SHIFTL:
+            return left << right;
+        case SHIFTR:
+            return left >> right;
+        case USHIFTR:
+            return left >>> right;
+        default:
+            throw new RuntimeException("Unrecognized operator " + this.asStr());
+        }
+    }
+
+    private int apply(int left, long right) {
         switch (this) {
         case SHIFTL:
             return left << right;
@@ -57,9 +76,27 @@ public enum ShiftOp implements AriOrShiftOp {
         }
     }
 
-    public Expr<IntSort> buildZ3Expr(Expr<IntSort> left, Expr<IntSort> right, Context ctx) {
-        BitVecExpr leftInBV = ctx.mkInt2BV(32, left);
-        BitVecExpr rightInBV = ctx.mkInt2BV(32, right);
+    private long apply(long left, long right) {
+        switch (this) {
+        case SHIFTL:
+            return left << right;
+        case SHIFTR:
+            return left >> right;
+        case USHIFTR:
+            return left >>> right;
+        default:
+            throw new RuntimeException("Unrecognized operator " + this.asStr());
+        }
+    }
+
+    public Expr<IntSort> buildZ3Expr(
+            Expr<IntSort> left,
+            boolean isLeftLong,
+            Expr<IntSort> right,
+            boolean isRightLong,
+            Context ctx) {
+        BitVecExpr leftInBV = ctx.mkInt2BV(isLeftLong ? 64 : 32, left);
+        BitVecExpr rightInBV = ctx.mkInt2BV(isRightLong ? 64 : 32, right);
         BitVecExpr res;
         switch (this) {
         case SHIFTL:

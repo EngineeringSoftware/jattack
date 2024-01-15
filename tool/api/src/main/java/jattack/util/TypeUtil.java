@@ -21,6 +21,24 @@ import org.objectweb.asm.Type;
  */
 public class TypeUtil {
 
+    private static final Map<Character, String> JAVA_CHARS_ESCAPE =
+        Map.of('\t', "\\t",
+            '\b', "\\b",
+            '\n', "\\n",
+            '\r', "\\r",
+            '\f', "\\f",
+            '\'', "\\'",
+            '\"', "\\\"",
+            '\\', "\\\\");
+
+    /**
+     * Convert the given character to the corresponding string
+     * representation in Java.
+     */
+    public static String charAsString(char val) {
+        return JAVA_CHARS_ESCAPE.getOrDefault(val, String.valueOf(val));
+    }
+
     /**
      * Wrap {@code Array#get(Object,int,Object)}, saving exceptions
      * thrown before rethrowing them.

@@ -49,6 +49,11 @@ public class BAriExp<T extends Number> extends Exp<T> implements NodeWithOperato
     }
 
     @Override
+    public Class<T> getType() {
+        return left.getType();
+    }
+
+    @Override
     public void accept(Visitor v) {
         if (v.visit(this)) {
             left.accept(v);

@@ -3,17 +3,17 @@ package jattack.ast.exp;
 import jattack.ast.visitor.Visitor;
 
 /**
- * Immutable int literal expression.
+ * Immutable short literal expression.
  */
-public final class ImIntVal extends ImVal<Integer> {
+public final class ImShortVal extends ImVal<Short> {
 
-    public ImIntVal(int val) {
+    public ImShortVal(short val) {
         super(val);
     }
 
     @Override
-    public Class<Integer> getType() {
-        return Integer.class;
+    public Class<Short> getType() {
+        return Short.class;
     }
 
     @Override
@@ -23,4 +23,3 @@ public final class ImIntVal extends ImVal<Integer> {
         }
     }
 }
-

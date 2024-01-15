@@ -12,7 +12,10 @@ import jattack.ast.exp.RefId;
 import jattack.ast.exp.ShiftExp;
 import jattack.ast.exp.DoubleVal;
 import jattack.ast.exp.ImBoolVal;
+import jattack.ast.exp.ImByteVal;
+import jattack.ast.exp.ImCharVal;
 import jattack.ast.exp.ImDoubleVal;
+import jattack.ast.exp.ImFloatVal;
 import jattack.ast.exp.IntArrVal;
 import jattack.ast.exp.RefArrAccessExp;
 import jattack.ast.exp.ShortVal;
@@ -22,6 +25,8 @@ import jattack.ast.operator.AriOp;
 import jattack.ast.exp.BAriExp;
 import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.ImIntVal;
+import jattack.ast.exp.ImLongVal;
+import jattack.ast.exp.ImShortVal;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
 import jattack.ast.exp.RelExp;
@@ -71,8 +76,8 @@ public class EvalVisitor extends Visitor {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <N extends Number> void endVisit(ShiftExp<N> node) {
-        int right = (int) stack.pop();
+    public <N extends Number, M extends Number> void endVisit(ShiftExp<N, M> node) {
+        M right = (M) stack.pop();
         N left = (N) stack.pop();
         ShiftOp op = node.getOp();
         stack.push(op.apply(left, right));
@@ -109,11 +114,28 @@ public class EvalVisitor extends Visitor {
         endVisitTerminalNode(node);
     }
 
+    @Override
+    public void endVisit(ImCharVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(ByteVal node) {
         endVisitTerminalNode(node);
     }
 
+    @Override
+    public void endVisit(ImByteVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(ShortVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(ImShortVal node) {
         endVisitTerminalNode(node);
     }
 
@@ -133,6 +155,11 @@ public class EvalVisitor extends Visitor {
     }
 
     @Override
+    public void endVisit(ImFloatVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
     public void endVisit(DoubleVal node) {
         endVisitTerminalNode(node);
     }
@@ -144,6 +171,11 @@ public class EvalVisitor extends Visitor {
 
     @Override
     public void endVisit(LongVal node) {
+        endVisitTerminalNode(node);
+    }
+
+    @Override
+    public void endVisit(ImLongVal node) {
         endVisitTerminalNode(node);
     }
 

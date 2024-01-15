@@ -14,8 +14,13 @@ import jattack.ast.exp.AltExp;
 import jattack.ast.exp.BAriExp;
 import jattack.ast.exp.BoolVal;
 import jattack.ast.exp.ImBoolVal;
+import jattack.ast.exp.ImByteVal;
+import jattack.ast.exp.ImCharVal;
 import jattack.ast.exp.ImDoubleVal;
+import jattack.ast.exp.ImFloatVal;
 import jattack.ast.exp.ImIntVal;
+import jattack.ast.exp.ImLongVal;
+import jattack.ast.exp.ImShortVal;
 import jattack.ast.exp.IntArrVal;
 import jattack.ast.exp.IntVal;
 import jattack.ast.exp.LogExp;
@@ -43,11 +48,9 @@ public class Visitor {
 
     public <N extends Number> void endVisit(BAriExp<N> node) {}
 
-    public <N extends Number> boolean visit(ShiftExp<N> node) {
-        return true;
-    }
+    public <N extends Number, M extends Number> boolean visit(ShiftExp<N, M> node) { return true; }
 
-    public <N extends Number> void endVisit(ShiftExp<N> node) {}
+    public <N extends Number, M extends Number> void endVisit(ShiftExp<N, M> node) {}
 
     public boolean visit(BoolVal node) { return true; }
 
@@ -61,17 +64,33 @@ public class Visitor {
 
     public void endVisit(CharVal node) {}
 
+    public boolean visit(ImCharVal node) { return true; }
+
+    public void endVisit(ImCharVal node) {}
+
     public boolean visit(ByteVal node) { return true; }
 
     public void endVisit(ByteVal node) {}
+
+    public boolean visit(ImByteVal node) { return true; }
+
+    public void endVisit(ImByteVal node) {}
 
     public boolean visit(ShortVal node) { return true; }
 
     public void endVisit(ShortVal node) {}
 
+    public boolean visit(ImShortVal node) { return true; }
+
+    public void endVisit(ImShortVal node) {}
+
     public boolean visit(FloatVal node) { return true; }
 
     public void endVisit(FloatVal node) {}
+
+    public boolean visit(ImFloatVal node) { return true; }
+
+    public void endVisit(ImFloatVal node) {}
 
     public boolean visit(IntVal node) { return true; }
 
@@ -92,6 +111,10 @@ public class Visitor {
     public boolean visit(LongVal node) { return true; }
 
     public void endVisit(LongVal node) {}
+
+    public boolean visit(ImLongVal node) { return true; }
+
+    public void endVisit(ImLongVal node) {}
 
     public boolean visit(LogExp node) { return true; }
 

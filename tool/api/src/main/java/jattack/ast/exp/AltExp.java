@@ -21,6 +21,9 @@ public class AltExp<T> extends Exp<T> {
     private boolean emptyPruned;
 
     public AltExp(List<Exp<T>> exps) {
+        if (exps.isEmpty()) {
+            throw new IllegalArgumentException("No expression passed!");
+        }
         this.exps = new UniqueList<>(exps);
         this.exp = null;
         this.emptyPruned = false;
@@ -79,6 +82,11 @@ public class AltExp<T> extends Exp<T> {
                 return iterator.hasNext() || currItr.hasNext();
             }
         };
+    }
+
+    @Override
+    public Class<T> getType() {
+        return exps.get(0).getType();
     }
 
     @Override

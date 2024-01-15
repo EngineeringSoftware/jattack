@@ -1,6 +1,5 @@
 package jattack.ast.exp;
 
-import jattack.ast.nodetypes.NodeWithType;
 import jattack.ast.exp.iterator.LitItr;
 import jattack.driver.Driver;
 import jattack.util.TypeUtil;
@@ -11,8 +10,7 @@ import java.util.List;
 /**
  * Number literal expression, i.e, short, byte, int, long, float, double
  */
-public abstract class NumberVal<T extends Number> extends LitExp<T>
-        implements NodeWithType<T> {
+public abstract class NumberVal<T extends Number> extends LitExp<T> {
 
     private final UniqueList<T> vals;
 
